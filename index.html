@@ -479,6 +479,7 @@
             font-weight: 500;
             color: #0f172a;
             text-align: right;
+            word-break: break-all;
         }
 
         .pdf-full-width {
@@ -489,9 +490,21 @@
             line-height: 1.6;
             color: #334155;
             background: #f8fafc;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             border: 1px dashed #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .descargo-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .descargo-item:last-child {
+            border-bottom: none;
         }
 
         .home {
@@ -788,23 +801,19 @@
         #pdf-form-template table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 0px;
-            /* Thicker borders might need less margin */
-            font-size: 10px;
+            margin-bottom: 12px;
+            font-size: 10.5px;
             table-layout: fixed;
-            /* Force consistent column sizing */
         }
 
         #pdf-form-template th,
         #pdf-form-template td {
             border: 1.2px solid #000;
-            /* Slightly thicker for better render */
-            padding: 4px 6px;
+            padding: 8px 10px;
             text-align: left;
             vertical-align: middle;
             word-wrap: break-word;
             font-weight: normal;
-            /* Default all to normal */
         }
 
         #pdf-form-template .pdf-label {
@@ -818,8 +827,16 @@
         }
 
         #pdf-form-template .pdf-input-area {
-            min-height: 40px;
+            min-height: 60px;
             vertical-align: top;
+            padding: 10px;
+            line-height: 1.5;
+        }
+
+        #pdf-form-template .pdf-detalles-item {
+            margin-bottom: 8px;
+            border-bottom: 0.5px solid #eee;
+            padding-bottom: 4px;
         }
 
         #pdf-form-template .pdf-info-footer {
@@ -910,6 +927,14 @@
             font-size: 8px;
             color: #777;
             text-align: center;
+        }
+
+        /* Salto de página para PDF */
+        .pdf-page-break {
+            page-break-before: always;
+            break-before: page;
+            margin-top: 0;
+            padding-top: 20px;
         }
     </style>
 
@@ -1102,8 +1127,8 @@
                         <div class="contenedorDatosPersonales">
 
                             <div class="datos">
-                                <label for="numerodocumentoidentidad">Número del Documento de Identidad</label>
-                                <input type="text" id="numerodocumentoidentidad"
+                                <label for="numerodocumentoidentidad_abonado">Número del Documento de Identidad</label>
+                                <input type="text" id="numerodocumentoidentidad_abonado"
                                     placeholder="Número del Documento de Identidad">
                             </div>
 
@@ -1190,8 +1215,8 @@
                             </div>
 
                             <div class="datos">
-                                <label for="numerodocumentoidentidad">Número del Documento de Identidad</label>
-                                <input type="text" id="numerodocumentoidentidad"
+                                <label for="numerodocumentoidentidad_usuario">Número del Documento de Identidad</label>
+                                <input type="text" id="numerodocumentoidentidad_usuario"
                                     placeholder="Número del Documento de Identidad">
                             </div>
 
@@ -3552,7 +3577,7 @@
             const lugarNacimiento = document.getElementById('lugarNacimiento').value.trim();
             const fechaNacimiento = document.getElementById('fechaNacimiento').value;
             // nuevo campos para la validacion de abonado
-            const numeroDocumentIdentidad = document.getElementById('numerodocumentoidentidad').value.trim();
+            const numeroDocumentIdentidad = (document.getElementById('numerodocumentoidentidad_abonado').value || document.getElementById('numerodocumentoidentidad_usuario').value || "").trim();
             const fechaEmisionDocumentoIdentidad = document.getElementById('fechaEmisionDocumentoIdentidad').value;
             // datos de validacion usuario
             const fechaVencimiento = document.getElementById('fechaVencimiento').value;
@@ -7060,7 +7085,7 @@
                     // Limpieza básica de labels largos o con asteriscos
                     labelText = labelText.split('\n')[0].replace('*', '').trim();
 
-                    html += `<p><strong>${labelText}:</strong> <span>${value}</span></p>`;
+                    html += `<div class="descargo-item"><p><strong>${labelText}:</strong> <span style="display:block; margin-top:5px; color:#000;">${value}</span></p></div>`;
                 }
             });
             return html;
@@ -7220,8 +7245,7 @@
 
         actualizarProgreso();
 
-        // --- PDF GENERATION LOGIC ---
-        // --- PDF GENERATION LOGIC ---
+        // --- PDF GENERATION LOGIC MEJORADO ---
         function generarPDF(mode = 'save') {
             return new Promise((resolve, reject) => {
                 // 1. Mostrar pantalla de carga
@@ -7231,12 +7255,30 @@
                 const elemento = document.getElementById('pdf-form-template');
                 elemento.style.display = 'block';
 
-                // 3. Mapear datos del formulario a la plantilla
+                // 3. Mapear TODOS los datos del formulario a la plantilla
                 try {
                     // Función auxiliar para obtener texto de select
                     const getSelectText = (id) => {
                         const el = document.getElementById(id);
                         return el && el.selectedIndex !== -1 && el.selectedIndex !== 0 ? el.options[el.selectedIndex].text : '';
+                    };
+
+                    // Función auxiliar para obtener valor de input
+                    const getValue = (id) => {
+                        const el = document.getElementById(id);
+                        return el?.value || '';
+                    };
+
+                    // Función auxiliar para obtener nombre de archivo
+                    const getFileName = (id) => {
+                        const el = document.getElementById(id);
+                        return el?.files[0]?.name || 'No adjuntado';
+                    };
+
+                    // Función auxiliar para setear texto de forma segura
+                    const setInnerText = (id, text) => {
+                        const el = document.getElementById(id);
+                        if (el) el.innerText = text || '';
                     };
 
                     // Identificar tipo de trámite (Reclamo, Queja, Apelación)
@@ -7245,45 +7287,66 @@
                     if (titleHeader) titleHeader.innerHTML = `FORMULARIO DE<br>${tipoTramite.toUpperCase()}`;
 
                     // Identificar Condición (Abonado, Usuario, Representante)
-                    let condicion = 'ABONADO';
-                    if (document.getElementById('datosValidacionUsuario').style.display !== 'none') condicion = 'USUARIO';
-                    if (document.getElementById('extra_representante').style.display !== 'none') condicion = 'REPRESENTANTE';
+                    let condicion = (tipoUsuarioSeleccionado || 'abonado').toUpperCase();
                     document.getElementById('pdf-val-condicion').innerText = condicion;
 
-                    // DATOS DEL RECLAMANTE
-                    document.getElementById('pdf-val-nombre-solo').innerText = document.getElementById('name')?.value || '';
-                    document.getElementById('pdf-val-apellidos-solo').innerText = document.getElementById('apellidos')?.value || '';
-                    document.getElementById('pdf-val-tipodoc').innerText = getSelectText('tipoDoc');
-                    document.getElementById('pdf-val-dni').innerText = document.getElementById('numDoc')?.value || '';
+                    // ===== SECCIÓN 1: DATOS DEL RECLAMANTE =====
+                    setInnerText('pdf-val-nombre-solo', getValue('name'));
+                    setInnerText('pdf-val-apellidos-solo', getValue('apellidos'));
+                    setInnerText('pdf-val-tipodoc', getSelectText('tipoDoc'));
+                    setInnerText('pdf-val-dni', getValue('numDoc'));
+
+                    // Relación con el cliente (si es Usuario)
+                    const esUsuario = (condicion === 'USUARIO');
+                    if (esUsuario) {
+                        setInnerText('pdf-val-relacion', getValue('relacion'));
+                    }
 
                     // DATOS DEL REPRESENTANTE (si aplica)
                     const esRepresentante = (condicion === 'REPRESENTANTE');
-                    document.getElementById('pdf-val-razon-social').innerText = esRepresentante ? (document.getElementById('razonsocial')?.value || '') : 'N/A';
+                    setInnerText('pdf-val-razon-social', esRepresentante ? getValue('razonsocial') : 'N/A');
                     if (esRepresentante) {
-                        document.getElementById('pdf-val-rep-nombre').innerText = document.getElementById('name')?.value || '';
-                        document.getElementById('pdf-val-rep-apellidos').innerText = document.getElementById('apellidos')?.value || '';
-                        document.getElementById('pdf-val-rep-tipodoc').innerText = getSelectText('tipoDoc');
-                        document.getElementById('pdf-val-rep-dni').innerText = document.getElementById('numDoc')?.value || '';
-                        document.getElementById('pdf-val-rep-poder').innerText = document.getElementById('cartaPoder')?.files.length > 0 ? 'SÍ' : 'NO';
+                        setInnerText('pdf-val-rep-nombre', getValue('name'));
+                        setInnerText('pdf-val-rep-apellidos', getValue('apellidos'));
+                        setInnerText('pdf-val-rep-tipodoc', getSelectText('tipoDoc'));
+                        setInnerText('pdf-val-rep-dni', getValue('numDoc'));
+                        setInnerText('pdf-val-rep-poder', getFileName('cartaPoder'));
                     } else {
-                        document.getElementById('pdf-val-rep-nombre').innerText = 'N/A';
-                        document.getElementById('pdf-val-rep-apellidos').innerText = 'N/A';
-                        document.getElementById('pdf-val-rep-tipodoc').innerText = 'N/A';
-                        document.getElementById('pdf-val-rep-dni').innerText = 'N/A';
-                        document.getElementById('pdf-val-rep-poder').innerText = 'N/A';
+                        setInnerText('pdf-val-rep-nombre', 'N/A');
+                        setInnerText('pdf-val-rep-apellidos', 'N/A');
+                        setInnerText('pdf-val-rep-tipodoc', 'N/A');
+                        setInnerText('pdf-val-rep-dni', 'N/A');
+                        setInnerText('pdf-val-rep-poder', 'N/A');
                     }
 
-                    // DATOS PARA NOTIFICACIÓN
-                    document.getElementById('pdf-val-correo').innerText = document.getElementById('correo')?.value || '';
-                    const autoriza = document.querySelector('input[name="autorizacion"]:checked')?.value;
-                    document.getElementById('pdf-val-autoriza').innerText = (autoriza === 'True' || autoriza === 'true') ? 'SÍ' : 'NO';
-                    document.getElementById('pdf-val-distrito').innerText = getSelectText('distritos');
-                    document.getElementById('pdf-val-direccion').innerText = document.getElementById('direccion')?.value || '';
-                    document.getElementById('pdf-val-tel').innerText = document.getElementById('numeroContacto')?.value || '';
-                    document.getElementById('pdf-val-dpto').innerText = 'LIMA';
-                    document.getElementById('pdf-val-provincia').innerText = 'LIMA';
+                    // ===== SECCIÓN 2: DATOS DE VALIDACIÓN =====
+                    const esAbonado = (condicion === 'ABONADO');
+                    if (esAbonado) {
+                        setInnerText('pdf-val-num-doc-identidad', getValue('numerodocumentoidentidad_abonado'));
+                        setInnerText('pdf-val-fecha-emision-doc', getValue('fechaEmisionDocumentoIdentidad'));
+                        setInnerText('pdf-val-nombre-padre', getValue('nombrePadre'));
+                        setInnerText('pdf-val-nombre-madre', getValue('nombreMadre'));
+                        setInnerText('pdf-val-lugar-nacimiento', getValue('lugarNacimiento'));
+                        setInnerText('pdf-val-fecha-nacimiento', getValue('fechaNacimiento'));
+                    } else if (esUsuario) {
+                        setInnerText('pdf-val-tipo-doc-usuario', getValue('tipodocumentoidentidad'));
+                        setInnerText('pdf-val-num-doc-usuario', getValue('numerodocumentoidentidad_usuario'));
+                        setInnerText('pdf-val-fecha-venc-recibo', getValue('fechaVencimiento'));
+                        setInnerText('pdf-val-monto-tarifa', getValue('montoTarifa'));
+                        setInnerText('pdf-val-dir-facturacion', getValue('direccionFacturacion'));
+                    }
 
-                    // DATOS DEL RECLAMO / SERVICIO
+                    // ===== SECCIÓN 3: DATOS PARA NOTIFICACIÓN =====
+                    setInnerText('pdf-val-correo', getValue('correo'));
+                    const autoriza = document.querySelector('input[name="autorizacion"]:checked')?.value;
+                    setInnerText('pdf-val-autoriza', (autoriza === 'True' || autoriza === 'true') ? 'SÍ' : 'NO');
+                    setInnerText('pdf-val-distrito', getSelectText('distritos'));
+                    setInnerText('pdf-val-direccion', getValue('direccion'));
+                    setInnerText('pdf-val-tel', getValue('numeroContacto'));
+                    setInnerText('pdf-val-dpto', 'ICA');
+                    setInnerText('pdf-val-provincia', 'ICA');
+
+                    // ===== SECCIÓN 4: DATOS DEL SERVICIO =====
                     let servicioLabel = '';
                     let numServicio = '';
                     let materia = '';
@@ -7293,7 +7356,7 @@
 
                     if (tipoTramite.includes('RECLAMO')) {
                         servicioLabel = getSelectText('servicioContratadoReclamo');
-                        numServicio = document.getElementById('numeroServicioContratadoReclamo')?.value || '';
+                        numServicio = getValue('numeroServicioContratadoReclamo');
                         materia = getSelectText('materias');
                         const selectsProblema = ['facturados', 'calidadidoneidad', 'ofertas', 'fservicio', 'instalacion', 'sb', 'con', 'mig', 'x'];
                         for (let id of selectsProblema) {
@@ -7303,40 +7366,75 @@
                                 break;
                             }
                         }
-                        infoNecesaria = document.getElementById('informacionNecesariaReclamo')?.value || '';
-                        descripcion = document.getElementById('descripcionProblemaSolicitudReclamo')?.value || '';
+                        infoNecesaria = getValue('informacionNecesariaReclamo');
+                        descripcion = getValue('descripcionProblemaSolicitudReclamo');
                     } else if (tipoTramite.includes('QUEJA')) {
                         servicioLabel = getSelectText('servicioObjetoQueja');
-                        numServicio = document.getElementById('numServicioQueja')?.value || '';
+                        numServicio = getValue('numServicioQueja');
                         materia = getSelectText('quejasOpciones');
-                        infoNecesaria = document.getElementById('informacionNecesariaQueja')?.value || '';
-                        descripcion = document.getElementById('descripcionProblemaQueja')?.value || '';
+                        infoNecesaria = getValue('informacionNecesariaQueja');
+                        descripcion = getValue('descripcionProblemaQueja');
                     } else if (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION')) {
                         servicioLabel = getSelectText('servicioMateriaApelacion');
-                        numServicio = document.getElementById('numeroServicioApelacion')?.value || '';
+                        numServicio = getValue('numeroServicioApelacion');
                         materia = getSelectText('apelacionOpciones');
-                        infoNecesaria = document.getElementById('informacionNecesariaApelacion')?.value || '';
-                        descripcion = document.getElementById('sustentoApelacion')?.value || '';
+                        infoNecesaria = getValue('informacionNecesariaApelacion');
+                        descripcion = getValue('sustentoApelacion');
                     }
 
-                    document.getElementById('pdf-val-servicio-contratado').innerText = servicioLabel || 'INTERNET FIJO';
-                    document.getElementById('pdf-val-num-servicio').innerText = numServicio;
-                    document.getElementById('pdf-val-servicio-reclamo').innerText = servicioLabel || 'INTERNET FIJO';
-                    document.getElementById('pdf-val-materia').innerText = materia;
-                    document.getElementById('pdf-val-problema').innerText = problema || 'N/A';
-                    document.getElementById('pdf-val-info-necesaria').innerText = infoNecesaria;
-                    document.getElementById('pdf-val-descripcion').innerText = descripcion;
-                    document.getElementById('pdf-val-otra-materia').innerText = 'NO';
-                    document.getElementById('pdf-val-info-adicional').innerText = 'SÍ';
+                    setInnerText('pdf-val-servicio-contratado', servicioLabel || 'INTERNET FIJO');
+                    setInnerText('pdf-val-num-servicio', numServicio);
+                    setInnerText('pdf-val-servicio-reclamo', servicioLabel || 'INTERNET FIJO');
+                    setInnerText('pdf-val-materia', materia);
+                    setInnerText('pdf-val-problema', problema || 'Ver detalles adicionales');
+                    setInnerText('pdf-val-info-necesaria', infoNecesaria);
+                    setInnerText('pdf-val-descripcion', descripcion);
+
+                    // ===== SECCIÓN 5: DETALLES ADICIONALES DINÁMICOS =====
+                    let detallesHTML = '';
+                    const contenedoresDetalles = [
+                        '#contenidoBase', '#contenidocaliad', '#contenidoincumplimientoone',
+                        '#contenidoincumplimientotwo', '#contenidoincumplimientothree', '#contenidoincumplimientofour',
+                        '#contenidofservicioone', '#contenidofsthree', '#contenidofsfour',
+                        '#contenidoinstalacionuno', '#contenidoinstalaciontres', '#contenidoinstalacioncinco',
+                        '#respuestabajauno', '#respuestabajados', '#respuestastrescuatro',
+                        '#respuestascontratosbase', '#respuestascontratosdos', '#respuestascontratostres', '#respuestascontratoscuatros',
+                        '#respuestasMigracionBase', '#xmateriasOne', '#xmateriasTwo', '#xmateriasThree'
+                    ];
+
+                    contenedoresDetalles.forEach(selector => {
+                        const container = document.querySelector(selector);
+                        if (container && container.style.display !== 'none' && container.offsetParent !== null) {
+                            const inputs = container.querySelectorAll('input:not([type="button"]):not([type="hidden"]), select, textarea');
+                            inputs.forEach(input => {
+                                if (input.offsetParent !== null && input.value && input.value.trim() !== '') {
+                                    let label = document.querySelector(`label[for="${input.id}"]`);
+                                    if (!label) label = input.closest('.datos')?.querySelector('label');
+                                    const labelText = label ? label.innerText.trim() : input.placeholder || input.name || input.id;
+                                    let value = input.value;
+                                    if (input.tagName === 'SELECT') {
+                                        value = input.options[input.selectedIndex]?.text || value;
+                                    }
+                                    if (input.type === 'file') {
+                                        value = input.files[0]?.name || 'No adjuntado';
+                                    }
+                                    detallesHTML += `<p class="pdf-detalles-item"><strong>${labelText}:</strong> ${value}</p>`;
+                                }
+                            });
+                        }
+                    });
+
+                    const detallesDestino = document.getElementById('pdf-val-detalles-adicionales');
+                    if (detallesDestino) detallesDestino.innerHTML = detallesHTML || '<p>No se ingresaron detalles adicionales.</p>';
 
                     // Fecha y Hora actual
                     const ahora = new Date();
-                    document.getElementById('pdf-val-fecha-solo').innerText = ahora.toLocaleDateString();
-                    document.getElementById('pdf-val-hora-solo').innerText = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    setInnerText('pdf-val-fecha-solo', ahora.toLocaleDateString());
+                    setInnerText('pdf-val-hora-solo', ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
                     // Código de Reclamo
                     const codReclamo = document.getElementById('message')?.innerText || 'Pendiente';
-                    document.getElementById('pdf-val-codigo').innerText = codReclamo;
+                    setInnerText('pdf-val-codigo', codReclamo);
 
                 } catch (error) {
                     console.error("Error al mapear datos al PDF:", error);
@@ -7344,11 +7442,11 @@
 
                 // 4. Configuración de html2pdf
                 const opciones = {
-                    margin: 10, // 10mm margins (A4: 210x297mm)
+                    margin: 10,
                     filename: `Formulario_OSIPTEL_${new Date().getTime()}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: {
-                        scale: 4, // High resolution (Stable max)
+                        scale: 3,
                         useCORS: true,
                         letterRendering: true,
                         scrollY: 0
@@ -7379,7 +7477,7 @@
         }
     </script>
 
-    <!-- PDF FORM TEMPLATE (Hidden) Redesigned for OSIPTEL Model -->
+    <!-- PDF FORM TEMPLATE (Hidden) - VERSIÓN COMPLETA CON TODOS LOS DATOS -->
     <div id="pdf-form-template" style="display: none;">
         <div class="pdf-header-custom">
             <div class="pdf-title-main">FORMULARIO DE<br>RECLAMO</div>
@@ -7406,21 +7504,68 @@
                 <td style="width: 25%;" id="pdf-val-apellidos-solo"></td>
             </tr>
             <tr>
-                <td class="pdf-label">Razón Social*</td>
-                <td colspan="3" id="pdf-val-razon-social"></td>
-            </tr>
-            <tr>
                 <td class="pdf-label">Tipo de documento de identidad*</td>
                 <td id="pdf-val-tipodoc"></td>
                 <td class="pdf-label">N° del documento de identidad*</td>
                 <td id="pdf-val-dni"></td>
             </tr>
+            <tr>
+                <td class="pdf-label">Relación con el cliente (si es Usuario)</td>
+                <td colspan="3" id="pdf-val-relacion">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Razón Social (si es Representante)*</td>
+                <td colspan="3" id="pdf-val-razon-social"></td>
+            </tr>
         </table>
 
         <table>
             <tr>
-                <td colspan="4" class="bg-light-blue">DATOS DEL REPRESENTANTE, Si el reclamo fuera presentado por un
-                    representante, adjuntar el poder respectivo y completar los siguientes datos</td>
+                <td colspan="4" class="bg-light-blue">DATOS DE VALIDACIÓN DE IDENTIDAD</td>
+            </tr>
+            <tr>
+                <td colspan="4" style="font-size: 9px; font-style: italic;">Datos de validación según condición
+                    (Abonado/Usuario)</td>
+            </tr>
+            <tr>
+                <td class="pdf-label" style="width: 25%;">Número documento identidad</td>
+                <td style="width: 25%;" id="pdf-val-num-doc-identidad">N/A</td>
+                <td class="pdf-label" style="width: 25%;">Fecha emisión documento</td>
+                <td style="width: 25%;" id="pdf-val-fecha-emision-doc">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Nombre del Padre</td>
+                <td id="pdf-val-nombre-padre">N/A</td>
+                <td class="pdf-label">Nombre de la Madre</td>
+                <td id="pdf-val-nombre-madre">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Lugar de Nacimiento</td>
+                <td id="pdf-val-lugar-nacimiento">N/A</td>
+                <td class="pdf-label">Fecha de Nacimiento</td>
+                <td id="pdf-val-fecha-nacimiento">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Tipo documento (Usuario)</td>
+                <td id="pdf-val-tipo-doc-usuario">N/A</td>
+                <td class="pdf-label">Número documento (Usuario)</td>
+                <td id="pdf-val-num-doc-usuario">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Fecha vencimiento recibo</td>
+                <td id="pdf-val-fecha-venc-recibo">N/A</td>
+                <td class="pdf-label">Monto plan tarifario</td>
+                <td id="pdf-val-monto-tarifa">N/A</td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Dirección de facturación</td>
+                <td colspan="3" id="pdf-val-dir-facturacion">N/A</td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td colspan="4" class="bg-light-blue">DATOS DEL REPRESENTANTE (Si aplica)</td>
             </tr>
             <tr>
                 <td class="pdf-label" style="width: 25%;">Nombres del representante*</td>
@@ -7435,8 +7580,8 @@
                 <td id="pdf-val-rep-dni"></td>
             </tr>
             <tr>
-                <td colspan="4">Se adjunta carta poder simple con firma del usuario u otro documento que acredita la
-                    representación* <span id="pdf-val-rep-poder" style="margin-left: 20px;"></span></td>
+                <td colspan="4">Carta poder adjunta: <span id="pdf-val-rep-poder" style="margin-left: 20px;"></span>
+                </td>
             </tr>
         </table>
 
@@ -7447,7 +7592,7 @@
             <tr>
                 <td class="pdf-label" style="width: 25%;">Dirección de correo electrónico*</td>
                 <td style="width: 25%;" id="pdf-val-correo"></td>
-                <td class="pdf-label" style="width: 25%;">Reclamante autoriza ser notificado por correo electrónico*
+                <td class="pdf-label" style="width: 25%;">Autoriza notificación por correo*
                 </td>
                 <td style="width: 25%;" id="pdf-val-autoriza"></td>
             </tr>
@@ -7464,15 +7609,13 @@
                 <td id="pdf-val-direccion"></td>
             </tr>
             <tr>
-                <td colspan="4">N° de servicio de telefonía a móvil/fija de contacto para cualquier información con
-                    relación al reclamo<br><span id="pdf-val-tel"></span></td>
+                <td colspan="4">N° de servicio de telefonía móvil/fija de contacto<br><span id="pdf-val-tel"></span>
+                </td>
             </tr>
         </table>
 
+        <div class="pdf-section-header pdf-page-break">2. DATOS DEL RECLAMO</div>
         <table>
-            <tr>
-                <td colspan="4" class="bg-light-blue">2. DATOS DEL RECLAMO</td>
-            </tr>
             <tr>
                 <td colspan="4" class="bg-light-blue" style="font-size: 12px;">DATOS DEL SERVICIO</td>
             </tr>
@@ -7483,7 +7626,7 @@
             <tr>
                 <td class="pdf-label" style="width: 25%;">Servicio contratado*</td>
                 <td style="width: 25%;" id="pdf-val-servicio-contratado"></td>
-                <td class="pdf-label" style="width: 25%;">Número o código del servicio o del contrato del abonado</td>
+                <td class="pdf-label" style="width: 25%;">Número o código del servicio</td>
                 <td style="width: 25%;" id="pdf-val-num-servicio"></td>
             </tr>
             <tr>
@@ -7506,37 +7649,25 @@
             </tr>
         </table>
 
+        <div class="pdf-section-header">3. Descargo de Cliente</div>
         <table>
             <tr>
-                <td colspan="4" class="bg-light-blue">Información necesaria*</td>
+                <td class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
+                <td class="bg-light-blue" style="width: 50%;">Descripción del problema y solicitud concreta:*</td>
             </tr>
             <tr>
-                <td colspan="4" class="pdf-input-area" id="pdf-val-info-necesaria"></td>
-            </tr>
-            <tr>
-                <td colspan="4" class="bg-light-blue">Descripción del problema y solicitud concreta:*</td>
-            </tr>
-            <tr>
-                <td colspan="4" class="pdf-input-area" id="pdf-val-descripcion"></td>
-            </tr>
-            <tr>
-                <td colspan="3" class="bg-light-blue">¿Se desea registrar otra materia reclamable?</td>
-                <td class="bg-light-blue" style="text-align: center;" id="pdf-val-otra-materia"></td>
+                <td class="pdf-input-area" id="pdf-val-info-necesaria"></td>
+                <td class="pdf-input-area" id="pdf-val-descripcion"></td>
             </tr>
         </table>
 
-        <div class="pdf-section-header">3. INFORMACIÓN ADICIONAL</div>
-
+        <div class="pdf-section-header">4. INFORMACIÓN ADICIONAL</div>
         <table>
-            <tr>
-                <td class="pdf-label bg-light-blue" style="width: 75%;">¿Se adjunta información adicional?*</td>
-                <td style="width: 25%; text-align: center;" id="pdf-val-info-adicional"></td>
-            </tr>
             <tr>
                 <td colspan="2">
                     Fecha: <span id="pdf-val-fecha-solo"
                         style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
-                    hora: <span id="pdf-val-hora-solo"
+                    Hora: <span id="pdf-val-hora-solo"
                         style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 60px; display: inline-block;"></span>
                 </td>
             </tr>
