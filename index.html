@@ -1338,7 +1338,7 @@
                             <div class="datos">
                                 <label for="correo">Correo electrónico</label>
                                 <input type="email" class="" name="datosPersonales" id="correo"
-                                    placeholder="ejemplo@gmail.com" required>
+                                    placeholder="ejemplo@gmail.com">
                             </div>
 
                         </div>
@@ -3479,13 +3479,6 @@
 
                     </div>
 
-                    <div class="datosPersonales">
-                        <div class="tituloPersonales">
-                            <h2>Descargo y Detalles Adicionales</h2>
-                        </div>
-                        <div id="descargoClienteReclamoM"></div>
-                    </div>
-
                 </div>
 
             </div>
@@ -5092,7 +5085,7 @@
 
             // Validar correo electrónico con expresión regular
             const correoRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-            if (!correo.value || !correoRegex.test(correo.value)) {
+            if (correo.value && !correoRegex.test(correo.value)) {
                 mostrarMensaje(correo, "Por favor, ingresa un correo electrónico válido.");
                 datosCompletos = false;
             } else {
@@ -6937,13 +6930,12 @@
 
             // 1. INDICAR CARGA DE INMEDIATO
             const btnOriginalText = botonMostrarDatos.value;
-            botonMostrarDatos.value = "Conectando con servidor...";
+            botonMostrarDatos.value = "Enviando solicitud...";
             botonMostrarDatos.disabled = true;
 
             try {
                 // recolectar datos preliminares
                 obtenerMotivo();
-                descargoCliente();
                 datosServicio();
                 obtenerDatosPersonales();
 
@@ -7091,6 +7083,108 @@
             return html;
         }
 
+        function construirCamposAdicionalesClienteHTML(wrapper = 'pdf') {
+            const escapeHtml = (text) => String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            const tieneAncestroOculto = (element) => {
+                let actual = element.parentElement;
+                while (actual && actual !== document.body) {
+                    if (actual.style && actual.style.display === 'none') return true;
+                    actual = actual.parentElement;
+                }
+                return false;
+            };
+
+            const camposExcluidos = new Set([
+                // Datos ya mostrados en el resumen/PDF principal
+                'name', 'apellidos', 'tipoDoc', 'numDoc', 'correo', 'numeroContacto', 'distritos', 'direccion',
+                'cartaPoder',
+                'empresaOperadorReclamo', 'servicioContratadoReclamo', 'numeroServicioContratadoReclamo', 'materias',
+                'facturados', 'calidadidoneidad', 'ofertas', 'fservicio', 'instalacion', 'sb', 'con', 'mig', 'x',
+                'informacionNecesariaReclamo', 'descripcionProblemaSolicitudReclamo',
+                'empresaOperadorQueja', 'servicioObjetoQueja', 'numServicioQueja', 'quejasOpciones',
+                'informacionNecesariaQueja', 'descripcionProblemaQueja',
+                'empresaOperadorApelacion', 'servicioMateriaApelacion', 'numeroServicioApelacion', 'apelacionOpciones',
+                'informacionNecesariaApelacion', 'sustentoApelacion',
+                // Campos retirados del PDF al inicio
+                'relacion', 'razonsocial',
+                'numerodocumentoidentidad_abonado', 'fechaEmisionDocumentoIdentidad',
+                'nombrePadre', 'nombreMadre', 'lugarNacimiento', 'fechaNacimiento',
+                'tipodocumentoidentidad', 'numerodocumentoidentidad_usuario', 'fechaVencimiento', 'montoTarifa',
+                'direccionFacturacion'
+            ]);
+
+            const nombresExcluidos = new Set(['autorizacion']);
+            const camposProcesados = new Set();
+            const camposFormulario = document.querySelectorAll(
+                '#claimForm input:not([type="button"]):not([type="submit"]):not([type="hidden"]), #claimForm select, #claimForm textarea'
+            );
+
+            let html = '';
+
+            camposFormulario.forEach((input) => {
+                if (!input || input.disabled) return;
+                if (input.id && camposExcluidos.has(input.id)) return;
+                if (input.name && nombresExcluidos.has(input.name)) return;
+                if (wrapper !== 'pdf' && tieneAncestroOculto(input)) return;
+
+                const claveCampo = input.type === 'radio'
+                    ? `radio:${input.name}`
+                    : (input.id || `${input.name || 'campo'}-${input.type || input.tagName}`);
+
+                if (camposProcesados.has(claveCampo)) return;
+
+                let value = '';
+                if (input.tagName === 'SELECT') {
+                    if (!input.value) return;
+                    value = input.options[input.selectedIndex]?.text?.trim() || '';
+                } else if (input.type === 'file') {
+                    if (!input.files || input.files.length === 0) return;
+                    value = Array.from(input.files).map(file => file.name).join(', ');
+                } else if (input.type === 'checkbox') {
+                    if (!input.checked) return;
+                    value = 'Sí';
+                } else if (input.type === 'radio') {
+                    if (!input.checked) return;
+                    value = input.value?.trim() || 'Sí';
+                } else {
+                    value = input.value?.trim() || '';
+                    if (!value) return;
+                }
+
+                let labelText = '';
+                if (input.id) {
+                    const label = document.querySelector(`label[for="${input.id}"]`);
+                    if (label) labelText = label.innerText.trim();
+                }
+                if (!labelText) {
+                    const label = input.closest('.datos, .oCorreo, .datos_solo, .contenedorDatosPersonales, .cajaRespuesta')?.querySelector('label');
+                    if (label) labelText = label.innerText.trim();
+                }
+
+                labelText = (labelText || input.placeholder || input.name || input.id || 'Campo')
+                    .split('\n')[0]
+                    .replace('*', '')
+                    .replace(':', '')
+                    .trim();
+
+                if (wrapper === 'preview') {
+                    html += `<div class="descargo-item"><p><strong>${escapeHtml(labelText)}:</strong> <span style="display:block; margin-top:5px; color:#000;">${escapeHtml(value)}</span></p></div>`;
+                } else {
+                    html += `<p class="pdf-detalles-item"><strong>${escapeHtml(labelText)}:</strong> ${escapeHtml(value)}</p>`;
+                }
+
+                camposProcesados.add(claveCampo);
+            });
+
+            return html;
+        }
+
         function obtenerMotivo() {
             let html = '';
             html += recolectarDatosVisibles('#seleccionUnicaApelacion');
@@ -7105,22 +7199,7 @@
 
 
         function descargoCliente() {
-            let html = '';
-            // Capturamos detalles adicionales de queja/apelación y el descargo final
-            html += recolectarDatosVisibles('#detailsApelacionOpcionesRespuestas');
-            html += recolectarDatosVisibles('#quejaRespuestasSelecciones');
-            html += recolectarDatosVisibles('#detailsIExtraReclamo');
-            html += recolectarDatosVisibles('#detailIExtraQueja');
-            html += recolectarDatosVisibles('#detailsIExtraApelacion');
-
-            // Añadimos captura de campos dinámicos que podrían haberse escapado
-            html += recolectarDatosVisibles('#respuestafcsone');
-            html += recolectarDatosVisibles('#respuestafcstwo');
-            html += recolectarDatosVisibles('#respuestaOfertaUnica');
-            html += recolectarDatosVisibles('#respuestaOfertaDos');
-            html += recolectarDatosVisibles('#respuestaMigracionBase');
-            html += recolectarDatosVisibles('#xmateriasOne');
-            html += recolectarDatosVisibles('#xmateriasTwo');
+            const html = construirCamposAdicionalesClienteHTML('preview');
 
             const descargoClienteReclamoM = document.getElementById('descargoClienteReclamoM');
             if (descargoClienteReclamoM) {
@@ -7177,7 +7256,7 @@
             }
 
             // 3. Datos Personales (Campos clave) - 40%
-            const camposClave = ['name', 'apellidos', 'numeroContacto', 'tipoDoc', 'numDoc', 'distritos', 'direccion', 'correo'];
+            const camposClave = ['name', 'apellidos', 'numeroContacto', 'tipoDoc', 'numDoc', 'distritos', 'direccion'];
             let camposLlenos = 0;
             camposClave.forEach(id => {
                 const el = document.getElementById(id);
@@ -7283,8 +7362,17 @@
 
                     // Identificar tipo de trámite (Reclamo, Queja, Apelación)
                     const tipoTramite = document.getElementById('opcionEscojida')?.innerText || 'RECLAMO';
+                    const tipoTramiteSingular = tipoTramite.includes('QUEJA')
+                        ? 'QUEJA'
+                        : (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION'))
+                            ? 'APELACIÓN'
+                            : 'RECLAMO';
                     const titleHeader = document.querySelector('.pdf-title-main');
                     if (titleHeader) titleHeader.innerHTML = `FORMULARIO DE<br>${tipoTramite.toUpperCase()}`;
+                    setInnerText('tituloTicketFinal', tipoTramiteSingular);
+                    setInnerText('pdf-titulo-datos-tramite', `2. DATOS DE LA ${tipoTramiteSingular}`);
+                    setInnerText('pdf-titulo-motivo-tramite', `MOTIVO DE LA ${tipoTramiteSingular}`);
+                    setInnerText('pdf-titulo-descargo-tramite', tipoTramiteSingular === 'APELACIÓN' ? '3. SUSTENTO DE LA APELACIÓN' : `3. DESCARGO DE ${tipoTramiteSingular}`);
 
                     // Identificar Condición (Abonado, Usuario, Representante)
                     let condicion = (tipoUsuarioSeleccionado || 'abonado').toUpperCase();
@@ -7296,15 +7384,8 @@
                     setInnerText('pdf-val-tipodoc', getSelectText('tipoDoc'));
                     setInnerText('pdf-val-dni', getValue('numDoc'));
 
-                    // Relación con el cliente (si es Usuario)
-                    const esUsuario = (condicion === 'USUARIO');
-                    if (esUsuario) {
-                        setInnerText('pdf-val-relacion', getValue('relacion'));
-                    }
-
                     // DATOS DEL REPRESENTANTE (si aplica)
                     const esRepresentante = (condicion === 'REPRESENTANTE');
-                    setInnerText('pdf-val-razon-social', esRepresentante ? getValue('razonsocial') : 'N/A');
                     if (esRepresentante) {
                         setInnerText('pdf-val-rep-nombre', getValue('name'));
                         setInnerText('pdf-val-rep-apellidos', getValue('apellidos'));
@@ -7312,31 +7393,14 @@
                         setInnerText('pdf-val-rep-dni', getValue('numDoc'));
                         setInnerText('pdf-val-rep-poder', getFileName('cartaPoder'));
                     } else {
-                        setInnerText('pdf-val-rep-nombre', 'N/A');
-                        setInnerText('pdf-val-rep-apellidos', 'N/A');
-                        setInnerText('pdf-val-rep-tipodoc', 'N/A');
-                        setInnerText('pdf-val-rep-dni', 'N/A');
-                        setInnerText('pdf-val-rep-poder', 'N/A');
+                        setInnerText('pdf-val-rep-nombre', '');
+                        setInnerText('pdf-val-rep-apellidos', '');
+                        setInnerText('pdf-val-rep-tipodoc', '');
+                        setInnerText('pdf-val-rep-dni', '');
+                        setInnerText('pdf-val-rep-poder', '');
                     }
 
-                    // ===== SECCIÓN 2: DATOS DE VALIDACIÓN =====
-                    const esAbonado = (condicion === 'ABONADO');
-                    if (esAbonado) {
-                        setInnerText('pdf-val-num-doc-identidad', getValue('numerodocumentoidentidad_abonado'));
-                        setInnerText('pdf-val-fecha-emision-doc', getValue('fechaEmisionDocumentoIdentidad'));
-                        setInnerText('pdf-val-nombre-padre', getValue('nombrePadre'));
-                        setInnerText('pdf-val-nombre-madre', getValue('nombreMadre'));
-                        setInnerText('pdf-val-lugar-nacimiento', getValue('lugarNacimiento'));
-                        setInnerText('pdf-val-fecha-nacimiento', getValue('fechaNacimiento'));
-                    } else if (esUsuario) {
-                        setInnerText('pdf-val-tipo-doc-usuario', getValue('tipodocumentoidentidad'));
-                        setInnerText('pdf-val-num-doc-usuario', getValue('numerodocumentoidentidad_usuario'));
-                        setInnerText('pdf-val-fecha-venc-recibo', getValue('fechaVencimiento'));
-                        setInnerText('pdf-val-monto-tarifa', getValue('montoTarifa'));
-                        setInnerText('pdf-val-dir-facturacion', getValue('direccionFacturacion'));
-                    }
-
-                    // ===== SECCIÓN 3: DATOS PARA NOTIFICACIÓN =====
+                    // ===== SECCIÓN 2: DATOS PARA NOTIFICACIÓN =====
                     setInnerText('pdf-val-correo', getValue('correo'));
                     const autoriza = document.querySelector('input[name="autorizacion"]:checked')?.value;
                     setInnerText('pdf-val-autoriza', (autoriza === 'True' || autoriza === 'true') ? 'SÍ' : 'NO');
@@ -7346,7 +7410,7 @@
                     setInnerText('pdf-val-dpto', 'ICA');
                     setInnerText('pdf-val-provincia', 'ICA');
 
-                    // ===== SECCIÓN 4: DATOS DEL SERVICIO =====
+                    // ===== SECCIÓN 3: DATOS DEL SERVICIO =====
                     let servicioLabel = '';
                     let numServicio = '';
                     let materia = '';
@@ -7390,42 +7454,17 @@
                     setInnerText('pdf-val-info-necesaria', infoNecesaria);
                     setInnerText('pdf-val-descripcion', descripcion);
 
-                    // ===== SECCIÓN 5: DETALLES ADICIONALES DINÁMICOS =====
-                    let detallesHTML = '';
-                    const contenedoresDetalles = [
-                        '#contenidoBase', '#contenidocaliad', '#contenidoincumplimientoone',
-                        '#contenidoincumplimientotwo', '#contenidoincumplimientothree', '#contenidoincumplimientofour',
-                        '#contenidofservicioone', '#contenidofsthree', '#contenidofsfour',
-                        '#contenidoinstalacionuno', '#contenidoinstalaciontres', '#contenidoinstalacioncinco',
-                        '#respuestabajauno', '#respuestabajados', '#respuestastrescuatro',
-                        '#respuestascontratosbase', '#respuestascontratosdos', '#respuestascontratostres', '#respuestascontratoscuatros',
-                        '#respuestasMigracionBase', '#xmateriasOne', '#xmateriasTwo', '#xmateriasThree'
-                    ];
-
-                    contenedoresDetalles.forEach(selector => {
-                        const container = document.querySelector(selector);
-                        if (container && container.style.display !== 'none' && container.offsetParent !== null) {
-                            const inputs = container.querySelectorAll('input:not([type="button"]):not([type="hidden"]), select, textarea');
-                            inputs.forEach(input => {
-                                if (input.offsetParent !== null && input.value && input.value.trim() !== '') {
-                                    let label = document.querySelector(`label[for="${input.id}"]`);
-                                    if (!label) label = input.closest('.datos')?.querySelector('label');
-                                    const labelText = label ? label.innerText.trim() : input.placeholder || input.name || input.id;
-                                    let value = input.value;
-                                    if (input.tagName === 'SELECT') {
-                                        value = input.options[input.selectedIndex]?.text || value;
-                                    }
-                                    if (input.type === 'file') {
-                                        value = input.files[0]?.name || 'No adjuntado';
-                                    }
-                                    detallesHTML += `<p class="pdf-detalles-item"><strong>${labelText}:</strong> ${value}</p>`;
-                                }
-                            });
-                        }
-                    });
+                    // ===== SECCIÓN 5: CAMPOS ADICIONALES COMPLETADOS POR EL CLIENTE =====
+                    const detallesHTML = construirCamposAdicionalesClienteHTML('pdf');
 
                     const detallesDestino = document.getElementById('pdf-val-detalles-adicionales');
-                    if (detallesDestino) detallesDestino.innerHTML = detallesHTML || '<p>No se ingresaron detalles adicionales.</p>';
+                    const tablaDetalles = document.getElementById('pdf-tabla-detalles-adicionales');
+                    if (detallesDestino) {
+                        detallesDestino.innerHTML = detallesHTML;
+                    }
+                    if (tablaDetalles) {
+                        tablaDetalles.style.display = detallesHTML ? 'table' : 'none';
+                    }
 
                     // Fecha y Hora actual
                     const ahora = new Date();
@@ -7510,61 +7549,6 @@
                 <td id="pdf-val-dni"></td>
             </tr>
             <tr>
-                <td class="pdf-label">Relación con el cliente (si es Usuario)</td>
-                <td colspan="3" id="pdf-val-relacion">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Razón Social (si es Representante)*</td>
-                <td colspan="3" id="pdf-val-razon-social"></td>
-            </tr>
-        </table>
-
-        <table>
-            <tr>
-                <td colspan="4" class="bg-light-blue">DATOS DE VALIDACIÓN DE IDENTIDAD</td>
-            </tr>
-            <tr>
-                <td colspan="4" style="font-size: 9px; font-style: italic;">Datos de validación según condición
-                    (Abonado/Usuario)</td>
-            </tr>
-            <tr>
-                <td class="pdf-label" style="width: 25%;">Número documento identidad</td>
-                <td style="width: 25%;" id="pdf-val-num-doc-identidad">N/A</td>
-                <td class="pdf-label" style="width: 25%;">Fecha emisión documento</td>
-                <td style="width: 25%;" id="pdf-val-fecha-emision-doc">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Nombre del Padre</td>
-                <td id="pdf-val-nombre-padre">N/A</td>
-                <td class="pdf-label">Nombre de la Madre</td>
-                <td id="pdf-val-nombre-madre">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Lugar de Nacimiento</td>
-                <td id="pdf-val-lugar-nacimiento">N/A</td>
-                <td class="pdf-label">Fecha de Nacimiento</td>
-                <td id="pdf-val-fecha-nacimiento">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Tipo documento (Usuario)</td>
-                <td id="pdf-val-tipo-doc-usuario">N/A</td>
-                <td class="pdf-label">Número documento (Usuario)</td>
-                <td id="pdf-val-num-doc-usuario">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Fecha vencimiento recibo</td>
-                <td id="pdf-val-fecha-venc-recibo">N/A</td>
-                <td class="pdf-label">Monto plan tarifario</td>
-                <td id="pdf-val-monto-tarifa">N/A</td>
-            </tr>
-            <tr>
-                <td class="pdf-label">Dirección de facturación</td>
-                <td colspan="3" id="pdf-val-dir-facturacion">N/A</td>
-            </tr>
-        </table>
-
-        <table>
-            <tr>
                 <td colspan="4" class="bg-light-blue">DATOS DEL REPRESENTANTE (Si aplica)</td>
             </tr>
             <tr>
@@ -7583,14 +7567,11 @@
                 <td colspan="4">Carta poder adjunta: <span id="pdf-val-rep-poder" style="margin-left: 20px;"></span>
                 </td>
             </tr>
-        </table>
-
-        <table>
             <tr>
                 <td colspan="4" class="bg-light-blue">DATOS PARA LA NOTIFICACIÓN Y CONTACTO</td>
             </tr>
             <tr>
-                <td class="pdf-label" style="width: 25%;">Dirección de correo electrónico*</td>
+                <td class="pdf-label" style="width: 25%;">Dirección de correo electrónico</td>
                 <td style="width: 25%;" id="pdf-val-correo"></td>
                 <td class="pdf-label" style="width: 25%;">Autoriza notificación por correo*
                 </td>
@@ -7614,7 +7595,7 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header pdf-page-break">2. DATOS DEL RECLAMO</div>
+        <div class="pdf-section-header" id="pdf-titulo-datos-tramite">2. DATOS DEL RECLAMO</div>
         <table>
             <tr>
                 <td colspan="4" class="bg-light-blue" style="font-size: 12px;">DATOS DEL SERVICIO</td>
@@ -7633,23 +7614,20 @@
                 <td class="pdf-label">Servicio materia de reclamo*</td>
                 <td colspan="3" id="pdf-val-servicio-reclamo"></td>
             </tr>
-        </table>
-
-        <table>
             <tr>
-                <td colspan="2" class="bg-light-blue">MOTIVO DEL RECLAMO</td>
+                <td colspan="4" class="bg-light-blue" id="pdf-titulo-motivo-tramite">MOTIVO DEL RECLAMO</td>
             </tr>
             <tr>
-                <td class="bg-light-blue" style="width: 50%;">Materia Reclamable*</td>
-                <td class="bg-light-blue" style="width: 50%;">Problema específico*</td>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;">Materia Reclamable*</td>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;">Problema específico*</td>
             </tr>
             <tr>
-                <td class="pdf-input-area" id="pdf-val-materia"></td>
-                <td class="pdf-input-area" id="pdf-val-problema"></td>
+                <td colspan="2" class="pdf-input-area" id="pdf-val-materia"></td>
+                <td colspan="2" class="pdf-input-area" id="pdf-val-problema"></td>
             </tr>
         </table>
 
-        <div class="pdf-section-header">3. Descargo de Cliente</div>
+        <div class="pdf-section-header" id="pdf-titulo-descargo-tramite">3. DESCARGO DE CLIENTE</div>
         <table>
             <tr>
                 <td class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
@@ -7661,7 +7639,16 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header">4. INFORMACIÓN ADICIONAL</div>
+        <div class="pdf-section-header pdf-page-break">4. INFORMACIÓN ADICIONAL</div>
+        <table id="pdf-tabla-detalles-adicionales">
+            <tr>
+                <td class="bg-light-blue">Campos adicionales completados por el cliente</td>
+            </tr>
+            <tr>
+                <td id="pdf-val-detalles-adicionales"></td>
+            </tr>
+        </table>
+
         <table>
             <tr>
                 <td colspan="2">
