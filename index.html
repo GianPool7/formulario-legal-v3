@@ -7372,7 +7372,7 @@
                     setInnerText('tituloTicketFinal', tipoTramiteSingular);
                     setInnerText('pdf-titulo-datos-tramite', `2. DATOS DE LA ${tipoTramiteSingular}`);
                     setInnerText('pdf-titulo-motivo-tramite', `MOTIVO DE LA ${tipoTramiteSingular}`);
-                    setInnerText('pdf-titulo-descargo-tramite', tipoTramiteSingular === 'APELACIÓN' ? '3. SUSTENTO DE LA APELACIÓN' : `3. DESCARGO DE ${tipoTramiteSingular}`);
+                    setInnerText('pdf-titulo-descargo-tramite', '4. DESCARGO DE CLIENTE');
 
                     // Identificar Condición (Abonado, Usuario, Representante)
                     let condicion = (tipoUsuarioSeleccionado || 'abonado').toUpperCase();
@@ -7627,7 +7627,7 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header pdf-page-break">4. INFORMACIÓN ADICIONAL</div>
+        <div class="pdf-section-header pdf-page-break">3. INFORMACIÓN ADICIONAL</div>
         <table id="pdf-tabla-detalles-adicionales">
             <tr>
                 <td class="bg-light-blue">Campos adicionales completados por el cliente</td>
@@ -7637,7 +7637,7 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header" id="pdf-titulo-descargo-tramite">3. DESCARGO DE CLIENTE</div>
+        <div class="pdf-section-header" id="pdf-titulo-descargo-tramite">4. DESCARGO DE CLIENTE</div>
         <table>
             <tr>
                 <td class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
@@ -7647,9 +7647,6 @@
                 <td class="pdf-input-area" id="pdf-val-info-necesaria"></td>
                 <td class="pdf-input-area" id="pdf-val-descripcion"></td>
             </tr>
-        </table>
-
-        <table>
             <tr>
                 <td colspan="2">
                     Fecha: <span id="pdf-val-fecha-solo"
