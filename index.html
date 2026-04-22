@@ -126,8 +126,10 @@
         .contenedorOpciones {
             padding: 20px;
             text-align: center;
-            background-color: var(--primary-blue);
-            color: white;
+            background-color: #11F5F7;
+            color: #131313; /* Texto oscuro para buen contraste con el color brillante */
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
         }
 
         .contenedorOpciones h3 {
@@ -794,22 +796,24 @@
         #pdf-form-template .pdf-section-header {
             font-size: 14px;
             font-weight: bold;
-            margin: 10px 0 5px 0;
+            margin: 15px 0 8px 0;
             text-transform: uppercase;
         }
 
         #pdf-form-template table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
-            font-size: 10.5px;
+            margin-bottom: 20px;
+            font-size: 12px;
             table-layout: fixed;
         }
+
+
 
         #pdf-form-template th,
         #pdf-form-template td {
             border: 1.2px solid #000;
-            padding: 8px 10px;
+            padding: 15px 10px;
             text-align: left;
             vertical-align: middle;
             word-wrap: break-word;
@@ -827,9 +831,10 @@
         }
 
         #pdf-form-template .pdf-input-area {
-            min-height: 60px;
+            min-height: 120px;
+            height: 120px;
             vertical-align: top;
-            padding: 10px;
+            padding: 15px;
             line-height: 1.5;
         }
 
@@ -1211,7 +1216,13 @@
 
                             <div class="datos">
                                 <label for="tipodocumentoidentidad">Tipo del Documento de Identidad</label>
-                                <input type="text" id="tipodocumentoidentidad" placeholder="Documento de Identidad">
+                                <select id="tipodocumentoidentidad">
+                                    <option value="" disabled selected>Seleccione</option>
+                                    <option value="DNI">DNI</option>
+                                    <option value="RUC">RUC</option>
+                                    <option value="PASAPORTE">PASAPORTE</option>
+                                    <option value="CARNET DE EXTRANJERIA">CARNET DE EXTRANJERIA</option>
+                                </select>
                             </div>
 
                             <div class="datos">
@@ -3328,7 +3339,7 @@
                 <div class="informacionExtra" id="informacionExtraReclamo">
                     <div class="detalleInformacionExtra">
                         <details class="seleccionarOpcciones" id="detailsIExtraReclamo">
-                            <summary>Descargo de cliente</summary>
+                            <summary>Información Necesaria</summary>
 
                             <div class="contenedorDatosPersonales">
                                 <label for="informacionNecesariaReclamo">Información Necesaria</label>
@@ -3349,7 +3360,7 @@
                 <div class="informacionExtra" id="informacionExtraQueja">
                     <div class="detalleInformacionExtra">
                         <details class="seleccionarOpcciones" id="detailIExtraQueja">
-                            <summary>Descargo de cliente</summary>
+                            <summary>Información Necesaria</summary>
 
                             <div class="contenedorDatosPersonales">
                                 <label for="informacionNecesariaQueja">Información Necesaria</label>
@@ -3369,7 +3380,7 @@
                 <div class="informacionExtra" id="informacionExtraApelacion">
                     <div class="detalleInformacionExtra">
                         <details class="seleccionarOpcciones" id="detailsIExtraApelacion">
-                            <summary>Descargo de cliente</summary>
+                            <summary>Información Necesaria</summary>
 
                             <div class="contenedorDatosPersonales">
                                 <label for="informacionNecesariaApelacion">Información Necesaria</label>
@@ -7015,7 +7026,7 @@
                     })
                     .catch(error => {
                         console.error('Error enviando a API:', error);
-                        alert("Hubo un error al guardar, pero el PDF se generó. Por favor intente de nuevo.");
+                        alert("Hubo un error de conexión con el servidor (posiblemente la imagen es muy grande). PDF Generado.");
                         document.getElementById('message').innerText = "ERR-API";
                     })
                     .finally(() => {
@@ -7105,6 +7116,7 @@
                 'name', 'apellidos', 'tipoDoc', 'numDoc', 'correo', 'numeroContacto', 'distritos', 'direccion',
                 'cartaPoder',
                 'empresaOperadorReclamo', 'servicioContratadoReclamo', 'numeroServicioContratadoReclamo', 'materias',
+                'servicioMateriaReclamo',
                 'facturados', 'calidadidoneidad', 'ofertas', 'fservicio', 'instalacion', 'sb', 'con', 'mig', 'x',
                 'informacionNecesariaReclamo', 'descripcionProblemaSolicitudReclamo',
                 'empresaOperadorQueja', 'servicioObjetoQueja', 'numServicioQueja', 'quejasOpciones',
@@ -7370,29 +7382,37 @@
                     const titleHeader = document.querySelector('.pdf-title-main');
                     if (titleHeader) titleHeader.innerHTML = `FORMULARIO DE<br>${tipoTramite.toUpperCase()}`;
                     setInnerText('tituloTicketFinal', tipoTramiteSingular);
-                    setInnerText('pdf-titulo-datos-tramite', `2. DATOS DE LA ${tipoTramiteSingular}`);
-                    setInnerText('pdf-titulo-motivo-tramite', `MOTIVO DE LA ${tipoTramiteSingular}`);
-                    setInnerText('pdf-titulo-descargo-tramite', '4. DESCARGO DE CLIENTE');
+                    setInnerText('pdf-titulo-datos-tramite', `2. DATOS DEL ${tipoTramiteSingular}`);
+                    setInnerText('pdf-titulo-motivo-tramite', `MOTIVO DEL ${tipoTramiteSingular}`);
 
                     // Identificar Condición (Abonado, Usuario, Representante)
                     let condicion = (tipoUsuarioSeleccionado || 'abonado').toUpperCase();
                     document.getElementById('pdf-val-condicion').innerText = condicion;
 
-                    // ===== SECCIÓN 1: DATOS DEL RECLAMANTE =====
-                    setInnerText('pdf-val-nombre-solo', getValue('name'));
-                    setInnerText('pdf-val-apellidos-solo', getValue('apellidos'));
-                    setInnerText('pdf-val-tipodoc', getSelectText('tipoDoc'));
-                    setInnerText('pdf-val-dni', getValue('numDoc'));
-
-                    // DATOS DEL REPRESENTANTE (si aplica)
                     const esRepresentante = (condicion === 'REPRESENTANTE');
+
                     if (esRepresentante) {
+                        // El Reclamante es el titular / empresa (usamos Razón Social)
+                        const rSocial = getValue('razonsocial');
+                        setInnerText('pdf-val-nombre-solo', rSocial ? rSocial : 'Ver expediente / Empresa vinculada');
+                        setInnerText('pdf-val-apellidos-solo', '-');
+                        setInnerText('pdf-val-tipodoc', '-');
+                        setInnerText('pdf-val-dni', '-');
+
+                        // El Representante es quien llena los campos de nombres en el formulario
                         setInnerText('pdf-val-rep-nombre', getValue('name'));
                         setInnerText('pdf-val-rep-apellidos', getValue('apellidos'));
                         setInnerText('pdf-val-rep-tipodoc', getSelectText('tipoDoc'));
                         setInnerText('pdf-val-rep-dni', getValue('numDoc'));
-                        setInnerText('pdf-val-rep-poder', getFileName('cartaPoder'));
+                        setInnerText('pdf-val-rep-poder', getFileName('cartaPoder') || 'Sí');
                     } else {
+                        // El Reclamante directo
+                        setInnerText('pdf-val-nombre-solo', getValue('name'));
+                        setInnerText('pdf-val-apellidos-solo', getValue('apellidos'));
+                        setInnerText('pdf-val-tipodoc', getSelectText('tipoDoc'));
+                        setInnerText('pdf-val-dni', getValue('numDoc'));
+
+                        // Limpiar campos de Representante
                         setInnerText('pdf-val-rep-nombre', '');
                         setInnerText('pdf-val-rep-apellidos', '');
                         setInnerText('pdf-val-rep-tipodoc', '');
@@ -7458,12 +7478,16 @@
                     const detallesHTML = construirCamposAdicionalesClienteHTML('pdf');
 
                     const detallesDestino = document.getElementById('pdf-val-detalles-adicionales');
-                    const tablaDetalles = document.getElementById('pdf-tabla-detalles-adicionales');
+                    const trDetallesHeader = document.getElementById('pdf-tr-detalles-adicionales');
+                    const trDetallesContent = document.getElementById('pdf-tr-detalles-adicionales-content');
                     if (detallesDestino) {
                         detallesDestino.innerHTML = detallesHTML;
                     }
-                    if (tablaDetalles) {
-                        tablaDetalles.style.display = detallesHTML ? 'table' : 'none';
+                    if (trDetallesHeader) {
+                        trDetallesHeader.style.display = detallesHTML ? 'table-row' : 'none';
+                    }
+                    if (trDetallesContent) {
+                        trDetallesContent.style.display = detallesHTML ? 'table-row' : 'none';
                     }
 
                     // Fecha y Hora actual
@@ -7479,39 +7503,76 @@
                     console.error("Error al mapear datos al PDF:", error);
                 }
 
-                // 4. Configuración de html2pdf
-                const opciones = {
-                    margin: 10,
-                    filename: `Formulario_OSIPTEL_${new Date().getTime()}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 3,
-                        useCORS: true,
-                        letterRendering: true,
-                        scrollY: 0
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                // Función para obtener la imagen de carta poder si existe
+                const getCartaPoderImage = () => {
+                    return new Promise((resolve) => {
+                        const fileInput = document.getElementById('cartaPoder');
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            const file = fileInput.files[0];
+                            if (file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve(e.target.result);
+                                reader.onerror = () => resolve(null);
+                                reader.readAsDataURL(file);
+                                return;
+                            }
+                        }
+                        resolve(null);
+                    });
                 };
 
-                // 5. Generar el PDF
-                if (mode === 'save') {
-                    html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(function (pdf) {
-                        elemento.style.display = 'none';
-                        document.getElementById('validandoDatos').style.display = 'none';
-                        resolve();
-                    }).save();
-                } else if (mode === 'base64') {
-                    html2pdf().set(opciones).from(elemento).outputPdf('datauristring').then(function (pdfBase64) {
-                        elemento.style.display = 'none';
-                        document.getElementById('validandoDatos').style.display = 'none';
-                        const base64Data = pdfBase64.split(',')[1];
-                        resolve(base64Data);
-                    }).catch(err => {
-                        elemento.style.display = 'none';
-                        document.getElementById('validandoDatos').style.display = 'none';
-                        reject(err);
-                    });
-                }
+                getCartaPoderImage().then((imageSrc) => {
+                    let pdfImageContainer = document.getElementById('pdf-image-container');
+                    if (imageSrc) {
+                        if (!pdfImageContainer) {
+                            pdfImageContainer = document.createElement('div');
+                            pdfImageContainer.id = 'pdf-image-container';
+                            elemento.appendChild(pdfImageContainer);
+                        }
+                        pdfImageContainer.innerHTML = `
+                            <div class="pdf-section-header pdf-page-break" style="page-break-before: always; margin-top: 20px;">ANEXO: CARTA PODER ADJUNTA</div>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <img src="${imageSrc}" style="max-width: 100%; max-height: 800px; object-fit: contain;">
+                            </div>
+                        `;
+                    } else if (pdfImageContainer) {
+                        pdfImageContainer.innerHTML = '';
+                    }
+
+                    // 4. Configuración de html2pdf
+                    const opciones = {
+                        margin: 10,
+                        filename: `Formulario_OSIPTEL_${new Date().getTime()}.pdf`,
+                        image: { type: 'jpeg', quality: 0.85 },
+                        html2canvas: {
+                            scale: 1.5,
+                            useCORS: true,
+                            letterRendering: true,
+                            scrollY: 0
+                        },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    // 5. Generar el PDF
+                    if (mode === 'save') {
+                        html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(function (pdf) {
+                            elemento.style.display = 'none';
+                            document.getElementById('validandoDatos').style.display = 'none';
+                            resolve();
+                        }).save();
+                    } else if (mode === 'base64') {
+                        html2pdf().set(opciones).from(elemento).outputPdf('datauristring').then(function (pdfBase64) {
+                            elemento.style.display = 'none';
+                            document.getElementById('validandoDatos').style.display = 'none';
+                            const base64Data = pdfBase64.split(',')[1];
+                            resolve(base64Data);
+                        }).catch(err => {
+                            elemento.style.display = 'none';
+                            document.getElementById('validandoDatos').style.display = 'none';
+                            reject(err);
+                        });
+                    }
+                });
             });
         }
     </script>
@@ -7595,8 +7656,8 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header" id="pdf-titulo-datos-tramite">2. DATOS DEL RECLAMO</div>
-        <table>
+        <div class="pdf-section-header pdf-page-break" id="pdf-titulo-datos-tramite" style="page-break-before: always; margin-top: 20px;">2. DATOS DEL RECLAMO</div>
+        <table style="margin-bottom: -1px;">
             <tr>
                 <td colspan="4" class="bg-light-blue" style="font-size: 12px;">DATOS DEL SERVICIO</td>
             </tr>
@@ -7625,34 +7686,26 @@
                 <td colspan="2" class="pdf-input-area" id="pdf-val-materia"></td>
                 <td colspan="2" class="pdf-input-area" id="pdf-val-problema"></td>
             </tr>
-        </table>
+            <tr>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;">Descripción del problema y solicitud concreta:*</td>
+            </tr>
+            <tr>
+                <td colspan="2" class="pdf-input-area" id="pdf-val-info-necesaria"></td>
+                <td colspan="2" class="pdf-input-area" id="pdf-val-descripcion"></td>
+            </tr>
 
-        <div class="pdf-section-header pdf-page-break">3. INFORMACIÓN ADICIONAL</div>
-        <table id="pdf-tabla-detalles-adicionales">
-            <tr>
-                <td class="bg-light-blue">Campos adicionales completados por el cliente</td>
+            <!-- CAMPOS DINAMICOS -->
+            <tr id="pdf-tr-detalles-adicionales" style="display: none;">
+                <td colspan="4" class="bg-light-blue">Campos adicionales completados por el cliente</td>
+            </tr>
+            <tr id="pdf-tr-detalles-adicionales-content" style="display: none;">
+                <td colspan="4" id="pdf-val-detalles-adicionales"></td>
             </tr>
             <tr>
-                <td id="pdf-val-detalles-adicionales"></td>
-            </tr>
-        </table>
-
-        <div class="pdf-section-header" id="pdf-titulo-descargo-tramite">4. DESCARGO DE CLIENTE</div>
-        <table>
-            <tr>
-                <td class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
-                <td class="bg-light-blue" style="width: 50%;">Descripción del problema y solicitud concreta:*</td>
-            </tr>
-            <tr>
-                <td class="pdf-input-area" id="pdf-val-info-necesaria"></td>
-                <td class="pdf-input-area" id="pdf-val-descripcion"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    Fecha: <span id="pdf-val-fecha-solo"
-                        style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
-                    Hora: <span id="pdf-val-hora-solo"
-                        style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 60px; display: inline-block;"></span>
+                <td colspan="4">
+                    Fecha: <span id="pdf-val-fecha-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
+                    Hora: <span id="pdf-val-hora-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 60px; display: inline-block;"></span>
                 </td>
             </tr>
         </table>
@@ -7660,6 +7713,36 @@
         <div class="pdf-info-footer">*Información obligatoria</div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tipoDocUsuario = document.getElementById("tipodocumentoidentidad");
+            const numDocUsuario = document.getElementById("numerodocumentoidentidad_usuario");
+
+            if (tipoDocUsuario && numDocUsuario) {
+                tipoDocUsuario.addEventListener("change", function () {
+                    const val = this.value;
+                    numDocUsuario.value = ""; // clear when changing type
+                    if (val === "DNI") {
+                        numDocUsuario.setAttribute('maxlength', '8');
+                    } else if (val === "RUC") {
+                        numDocUsuario.setAttribute('maxlength', '11');
+                    } else if (val === "PASAPORTE" || val === "CARNET DE EXTRANJERIA") {
+                        numDocUsuario.setAttribute('maxlength', '20');
+                    } else {
+                        numDocUsuario.removeAttribute('maxlength');
+                    }
+                });
+
+                numDocUsuario.addEventListener("input", function (e) {
+                    const tipo = tipoDocUsuario.value;
+                    if (tipo === "DNI" || tipo === "RUC") {
+                        // Solo números
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
