@@ -1756,7 +1756,7 @@
                         </details>
 
                         <details class="seleccionarOpcciones" id="apelacionRespuestasSelecciones">
-                            <summary id="tituloApelacion">Detalles adicionales </summary>
+                            <summary id="tituloApelacion">Objeto de apelación</summary>
 
                             <div class="contenedorDatosPersonales" id="apelacionUno" style="display: none;">
 
@@ -7054,6 +7054,31 @@
             return 'RFPI';
         }
 
+        function normalizarCodigoLegal(codigo, prefijoCodigo) {
+            const texto = String(codigo || '').trim().toUpperCase();
+            const soloNumeros = texto.match(/\d+/g)?.join('') || '';
+            const prefijo = texto.match(/^(RFPI|QFPI|AFPI)/)?.[1] || prefijoCodigo;
+
+            if (!soloNumeros) return `${prefijo}00000`;
+            return `${prefijo}${soloNumeros.padStart(5, '0')}`;
+        }
+
+        function obtenerNombreTramiteArchivo() {
+            const tipoTramite = (
+                document.getElementById('tituloTicketFinal')?.innerText ||
+                document.getElementById('opcionEscojida')?.innerText ||
+                ''
+            ).toUpperCase();
+
+            if (tipoTramite.includes('QUEJA')) return 'queja';
+            if (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION')) return 'apelacion';
+            return 'reclamo';
+        }
+
+        function construirTituloFormulario(codigo) {
+            return `Formulario de ${obtenerNombreTramiteArchivo()} ${codigo}`;
+        }
+
         async function recolectarArchivosAdjuntos() {
             const inputsArchivo = Array.from(document.querySelectorAll('input[type="file"]'));
             const archivos = [];
@@ -7174,9 +7199,9 @@
                 botonMostrarDatos.value = "Reservando código...";
 
                 const reserva = await reservarCodigoAppsScript(scriptURL, prefijoCodigo);
-                const codigoReservado = reserva.codigo || reserva.id;
-                const urlCarpetaReservada = reserva.urlCarpeta || "";
+                const codigoReservado = normalizarCodigoLegal(reserva.codigo || reserva.id, prefijoCodigo);
                 const carpetaIdReservada = reserva.carpetaId || "";
+                const tituloFormulario = construirTituloFormulario(codigoReservado);
 
                 document.getElementById('message').innerText = codigoReservado;
 
@@ -7193,9 +7218,14 @@
                 const formData = {
                     codigo: codigoReservado,
                     id: codigoReservado,
-                    urlCarpeta: urlCarpetaReservada,
                     carpetaId: carpetaIdReservada,
                     prefijoCodigo: prefijoCodigo,
+                    asuntoCorreo: tituloFormulario,
+                    tituloCorreo: tituloFormulario,
+                    tituloFormulario: tituloFormulario,
+                    nombrePdf: `${tituloFormulario}.pdf`,
+                    nombreArchivoPdf: `${tituloFormulario}.pdf`,
+                    mostrarLinkCarpeta: false,
                     nombre: document.getElementById('name')?.value || '',
                     apellidos: document.getElementById('apellidos')?.value || '',
                     tipodoc: document.getElementById('tipoDoc')?.value || '',
@@ -7885,9 +7915,11 @@
                     }
 
                     // 4. Configuración de html2pdf
+                    const codigoPdf = document.getElementById('message')?.innerText || 'PENDIENTE';
+                    const tituloPdf = construirTituloFormulario(codigoPdf);
                     const opciones = {
                         margin: 10,
-                        filename: `Formulario_OSIPTEL_${new Date().getTime()}.pdf`,
+                        filename: `${tituloPdf}.pdf`,
                         image: { type: 'jpeg', quality: 0.85 },
                         html2canvas: {
                             scale: 1.5,
