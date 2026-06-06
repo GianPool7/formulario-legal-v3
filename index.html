@@ -265,6 +265,13 @@
             flex-direction: column;
         }
 
+        .input-help-text {
+            margin-top: 6px;
+            color: var(--text-grey);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -1350,6 +1357,7 @@
                                 <label for="numeroContacto">Número de contacto</label>
                                 <input type="text" name="numeroContacto" id="numeroContacto"
                                     placeholder="Número de contacto" max="9" required>
+                                <small class="input-help-text">para cualquier información con relación al documento presentado</small>
                             </div>
                             <div class="datos">
                                 <label for="tipoDoc">Tipo de Documento</label>
@@ -3399,6 +3407,11 @@
                                 <textarea name="" id="descripcionProblemaSolicitudReclamo" maxlength="300"></textarea>
                             </div>
 
+                            <div class="contenedorDatosPersonales">
+                                <label for="informacionAdicionalReclamoArchivo">Se adjunta información adicional:</label>
+                                <input type="file" name="informacionAdicionalReclamo" id="informacionAdicionalReclamoArchivo" multiple>
+                            </div>
+
                         </details>
                     </div>
                 </div>
@@ -3419,6 +3432,11 @@
                                 <textarea name="" id="descripcionProblemaQueja" maxlength="300"></textarea>
                             </div>
 
+                            <div class="contenedorDatosPersonales">
+                                <label for="informacionAdicionalQuejaArchivo">Se adjunta información adicional:</label>
+                                <input type="file" name="informacionAdicionalQueja" id="informacionAdicionalQuejaArchivo" multiple>
+                            </div>
+
                         </details>
                     </div>
                 </div>
@@ -3437,6 +3455,11 @@
                             <div class="contenedorDatosPersonales">
                                 <label for="sustentoApelacion">Sustento de apelación</label>
                                 <textarea name="" id="sustentoApelacion" maxlength="300"></textarea>
+                            </div>
+
+                            <div class="contenedorDatosPersonales">
+                                <label for="informacionAdicionalApelacionArchivo">Se adjunta información adicional:</label>
+                                <input type="file" name="informacionAdicionalApelacion" id="informacionAdicionalApelacionArchivo" multiple>
                             </div>
 
                         </details>
@@ -7540,6 +7563,11 @@
                         return el?.files[0]?.name || 'No adjuntado';
                     };
 
+                    const tieneArchivos = (ids) => ids.some(id => {
+                        const el = document.getElementById(id);
+                        return el?.files && el.files.length > 0;
+                    });
+
                     // Función auxiliar para setear texto de forma segura
                     const setInnerText = (id, text) => {
                         const el = document.getElementById(id);
@@ -7765,13 +7793,13 @@
                     setInnerText('pdf-val-reclamo-codigo-reporte', datosCalidadReclamo.codigoReporte);
                     setInnerText('pdf-val-reclamo-descripcion', descripcion);
                     setInnerText('pdf-val-reclamo-otra-materia', 'NO');
-                    setInnerText('pdf-val-reclamo-info-adicional', 'NO');
+                    setInnerText('pdf-val-reclamo-info-adicional', tieneArchivos(['informacionAdicionalReclamoArchivo']) ? 'SÍ' : 'NO');
                     setInnerText('pdf-val-apelacion-servicio-materia', servicioLabel);
                     setInnerText('pdf-val-apelacion-num-servicio', numServicio);
                     setInnerText('pdf-val-apelacion-motivo', materia);
                     setInnerText('pdf-val-apelacion-especificar', [infoNecesaria, especificacionApelacion].filter(Boolean).join(' - '));
                     setInnerText('pdf-val-apelacion-sustento', descripcion);
-                    setInnerText('pdf-val-apelacion-info-adicional', 'NO');
+                    setInnerText('pdf-val-apelacion-info-adicional', tieneArchivos(['informacionAdicionalApelacionArchivo']) ? 'SÍ' : 'NO');
                     setInnerText('pdf-val-queja-objeto', materia);
                     setInnerText('pdf-val-queja-info-necesaria', infoNecesaria);
                     setInnerText('pdf-val-queja-descripcion', descripcion);
@@ -7781,7 +7809,7 @@
                     const archivosQueja = ['medioProbatorioNegativa', 'constanciaPagoMedioCobranza', 'medioProbatoriopgQueja', 'medioProbatoriosTramitacion']
                         .map(id => getFileName(id))
                         .filter(nombre => nombre && nombre !== 'No adjuntado');
-                    setInnerText('pdf-val-queja-info-adicional', adjuntaInfoQueja || archivosQueja.length
+                    setInnerText('pdf-val-queja-info-adicional', adjuntaInfoQueja || archivosQueja.length || tieneArchivos(['informacionAdicionalQuejaArchivo'])
                         ? ['SÍ', ...archivosQueja].join(' - ')
                         : 'NO');
                     setInnerText('pdf-val-codigo-numero-apelacion', getValue('codigoNumeroApelacion'));
