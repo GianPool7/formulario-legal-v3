@@ -764,12 +764,11 @@
         /* PDF Form Template Styles Redesign */
         #pdf-form-template {
             display: none;
-            font-family: 'Clan Pro', 'Inter', Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             padding: 0px;
             color: #000;
             background: #fff;
-            width: 188mm;
-            /* Slightly reduced to avoid right border clipping */
+            width: 186mm;
             box-sizing: border-box;
             overflow: visible;
         }
@@ -778,33 +777,35 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 5px;
+            margin-bottom: 26px;
         }
 
         #pdf-form-template .pdf-title-main {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 18px;
             line-height: 1.1;
         }
 
         #pdf-form-template .pdf-codigo-label {
-            font-size: 11px;
-            margin-top: 15px;
+            font-size: 14px;
+            margin-top: 18px;
+            white-space: nowrap;
         }
 
         #pdf-form-template .pdf-section-header {
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
-            margin: 15px 0 8px 0;
+            margin: 18px 0 12px 0;
             text-transform: uppercase;
         }
 
         #pdf-form-template table {
-            width: 100%;
+            width: calc(100% - 1px);
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 12px;
+            border: 1.2px solid #000;
+            margin-bottom: 14px;
+            font-size: 12.5px;
             table-layout: fixed;
         }
 
@@ -813,29 +814,74 @@
         #pdf-form-template th,
         #pdf-form-template td {
             border: 1.2px solid #000;
-            padding: 15px 10px;
+            padding: 6px 6px;
             text-align: left;
             vertical-align: middle;
             word-wrap: break-word;
             font-weight: normal;
+            line-height: 1.25;
         }
 
         #pdf-form-template .pdf-label {
             font-weight: normal;
-            /* Labels are not bold in the reference image */
         }
 
         #pdf-form-template .bg-light-blue {
-            background-color: #d9eaf7;
+            background-color: #b9dcf5;
             font-weight: bold;
+            font-size: 14px;
         }
 
         #pdf-form-template .pdf-input-area {
-            min-height: 120px;
-            height: 120px;
+            min-height: 58px;
+            height: 58px;
             vertical-align: top;
-            padding: 15px;
-            line-height: 1.5;
+            padding: 8px;
+            line-height: 1.35;
+        }
+
+        #pdf-form-template .pdf-queja-only {
+            display: none;
+        }
+
+        #pdf-form-template .pdf-apelacion-only {
+            display: none;
+        }
+
+        #pdf-form-template .pdf-reclamo-only {
+            display: none;
+        }
+
+        #pdf-form-template.pdf-queja-mode .pdf-queja-only {
+            display: table-row;
+        }
+
+        #pdf-form-template.pdf-apelacion-mode .pdf-apelacion-only {
+            display: table-row;
+        }
+
+        #pdf-form-template.pdf-reclamo-mode .pdf-reclamo-only {
+            display: table-row;
+        }
+
+        #pdf-form-template.pdf-apelacion-mode .pdf-table-tramite,
+        #pdf-form-template.pdf-reclamo-mode .pdf-table-tramite {
+            border: 0;
+        }
+
+        #pdf-form-template.pdf-queja-mode .pdf-queja-page-break {
+            page-break-before: always;
+            break-before: page;
+        }
+
+        #pdf-form-template.pdf-apelacion-mode .pdf-apelacion-page-break {
+            page-break-before: always;
+            break-before: page;
+        }
+
+        #pdf-form-template.pdf-reclamo-mode .pdf-reclamo-page-break {
+            page-break-before: always;
+            break-before: page;
         }
 
         #pdf-form-template .pdf-detalles-item {
@@ -845,9 +891,10 @@
         }
 
         #pdf-form-template .pdf-info-footer {
-            margin-top: 10px;
-            font-size: 9px;
+            margin-top: 12px;
+            font-size: 12px;
             color: #ff0000;
+            font-weight: bold;
         }
 
         .pdf-section-title {
@@ -6936,6 +6983,151 @@
         botonMostrarDatos.innerText = "ENVIAR Y GENERAR TICKET"; // Try both props depending on element type
         //botonMostrarDatos.style.display="flex";
 
+        const TIPOS_ARCHIVO_PERMITIDOS = 'image/*,audio/*,video/*,application/pdf';
+
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.setAttribute('accept', TIPOS_ARCHIVO_PERMITIDOS);
+        });
+
+        function obtenerDescripcionSolicitud() {
+            const tipoTramite = document.getElementById('tituloTicketFinal')?.innerText || '';
+
+            if (tipoTramite.includes('QUEJA')) {
+                return document.getElementById('descripcionProblemaQueja')?.value || '';
+            }
+
+            if (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION')) {
+                return document.getElementById('sustentoApelacion')?.value || '';
+            }
+
+            return document.getElementById('descripcionProblemaSolicitudReclamo')?.value || '';
+        }
+
+        function obtenerMateriaSolicitud() {
+            const tipoTramite = document.getElementById('tituloTicketFinal')?.innerText || '';
+
+            if (tipoTramite.includes('QUEJA')) {
+                return document.getElementById('quejasOpciones')?.value || '';
+            }
+
+            if (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION')) {
+                return document.getElementById('apelacionOpciones')?.value || '';
+            }
+
+            return document.getElementById('materias')?.value || '';
+        }
+
+        function obtenerPrefijoCodigo() {
+            const tipoTicket = document.getElementById('tipoticket')?.value || '';
+            if (tipoTicket === '6') return 'QFPI';
+            if (tipoTicket === '7') return 'AFPI';
+            if (tipoTicket === '3') return 'RFPI';
+
+            const tipoTramite = document.getElementById('tituloTicketFinal')?.innerText || '';
+
+            if (tipoTramite.includes('QUEJA')) return 'QFPI';
+            if (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION')) return 'AFPI';
+
+            return 'RFPI';
+        }
+
+        async function recolectarArchivosAdjuntos() {
+            const inputsArchivo = Array.from(document.querySelectorAll('input[type="file"]'));
+            const archivos = [];
+
+            for (const input of inputsArchivo) {
+                if (!input.files || input.files.length === 0) continue;
+
+                for (const file of input.files) {
+                    const base64 = await convertFileToBase64(file);
+                    archivos.push({
+                        nombre: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        size: file.size,
+                        base64: base64,
+                        campo: input.name || input.id || 'archivo'
+                    });
+                }
+            }
+
+            return archivos;
+        }
+
+        function enviarAppsScriptPorFormulario(scriptURL, formData) {
+            return new Promise((resolve) => {
+                const iframeName = 'appsScriptSubmitFrame';
+                let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.name = iframeName;
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = scriptURL;
+                form.target = iframeName;
+                form.style.display = 'none';
+                form.enctype = 'application/x-www-form-urlencoded';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'payload';
+                input.value = JSON.stringify(formData);
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+                form.remove();
+
+                setTimeout(resolve, 1500);
+            });
+        }
+
+        function reservarCodigoAppsScript(scriptURL, prefijoCodigo) {
+            return new Promise((resolve, reject) => {
+                const callbackName = `recibirCodigoReservado_${Date.now()}`;
+                const script = document.createElement('script');
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error("No se pudo reservar el código."));
+                }, 15000);
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    script.remove();
+                }
+
+                window[callbackName] = function (data) {
+                    cleanup();
+
+                    if (!data || (!data.success && data.result !== 'success')) {
+                        reject(new Error(data?.error || "Apps Script no devolvió un código válido."));
+                        return;
+                    }
+
+                    resolve(data);
+                };
+
+                const params = new URLSearchParams({
+                    accion: 'reservar',
+                    prefijo: prefijoCodigo,
+                    callback: callbackName
+                });
+
+                script.onerror = function () {
+                    cleanup();
+                    reject(new Error("No se pudo conectar con Apps Script para reservar el código."));
+                };
+
+                script.src = `${scriptURL}?${params.toString()}`;
+                document.body.appendChild(script);
+            });
+        }
+
         // Evento para cuando el usuario haga click en el botón
         botonMostrarDatos.addEventListener('click', async function () {
 
@@ -6951,87 +7143,69 @@
                 obtenerDatosPersonales();
 
                 // 2. URL DEL SCRIPT
-                const scriptURL = 'https://script.google.com/macros/s/AKfycbzwxbW9GsfmF06bE22F7ET7VGv--ijWKROKPcY_bMmWe8h7w4lFq9AYfdzRb2SrVAUb/exec';
+                const scriptURL = 'https://script.google.com/macros/s/AKfycbwMPN_Z8OKQPT_sbFeAlqSyOfZtFpVL1retmkcJz24MiGb0tYKb5PAz9IN8hfFa158Q/exec';
 
-                // 3. OBTENER ID PREVIO (Paso Nuevo)
-                let codigoReservado = "PENDIENTE";
+                // 3. Reservar código y carpeta antes de generar el PDF.
+                const prefijoCodigo = obtenerPrefijoCodigo();
+                document.getElementById('message').innerText = "ENVIANDO...";
+                botonMostrarDatos.value = "Reservando código...";
 
-                try {
-                    const responseId = await fetch(scriptURL); // GET request por defecto
-                    const jsonId = await responseId.json();
-                    if (jsonId.nextId) {
-                        const rawId = jsonId.nextId;
-                        codigoReservado = 'RFP-' + String(rawId).padStart(5, '0');
-                    } else {
-                        // Fallback si el script no está actualizado aún
-                        console.warn("Script no devolvió nextId, usando fallback");
-                        codigoReservado = "RFP-XXXX";
-                    }
-                } catch (e) {
-                    console.error("No se pudo obtener el ID previo:", e);
-                    codigoReservado = "RFP-GEN";
-                }
+                const reserva = await reservarCodigoAppsScript(scriptURL, prefijoCodigo);
+                const codigoReservado = reserva.codigo || reserva.id;
+                const urlCarpetaReservada = reserva.urlCarpeta || "";
+                const carpetaIdReservada = reserva.carpetaId || "";
 
-                // Mostrar ID en pantalla PARA QUE SALGA EN EL PDF
                 document.getElementById('message').innerText = codigoReservado;
 
                 // Actualizar estado botón
                 botonMostrarDatos.value = "Generando PDF...";
 
-                // 4. GENERAR PDF EN BASE64 (Ahora incluye el ID visualmente)
+                // 4. GENERAR PDF EN BASE64
                 const pdfBase64 = await generarPDF('base64');
+                const archivosAdjuntos = await recolectarArchivosAdjuntos();
 
                 botonMostrarDatos.value = "Enviando datos...";
 
                 // 5. PREPARAR DATOS PARA ENVÍO FINAL
                 const formData = {
-                    nuevo_id: "SOLICITAR_ID",
+                    codigo: codigoReservado,
+                    id: codigoReservado,
+                    urlCarpeta: urlCarpetaReservada,
+                    carpetaId: carpetaIdReservada,
+                    prefijoCodigo: prefijoCodigo,
                     nombre: document.getElementById('name')?.value || '',
                     apellidos: document.getElementById('apellidos')?.value || '',
-                    tipodoc: document.querySelector('select[name="tipo_documento"]')?.value || '',
+                    tipodoc: document.getElementById('tipoDoc')?.value || '',
                     numDoc: document.getElementById('numDoc')?.value || '',
+                    dni: document.getElementById('numDoc')?.value || '',
                     correo: document.getElementById('correo')?.value || '',
                     telefono: document.getElementById('numeroContacto')?.value || '',
                     direccion: document.getElementById('direccion')?.value || '',
                     distrito: document.getElementById('distritos')?.value || '',
                     tipoTicket: document.getElementById('tituloTicketFinal')?.innerText || 'Solicitud',
-                    materiaReclamo: document.getElementById('materias')?.value || '',
-                    descripcion: document.getElementById('descripHechos')?.value || '',
-                    pdfArchivo: pdfBase64 // ADJUNTO PDF CON CÓDIGO INCRUSTADO
+                    materiaReclamo: obtenerMateriaSolicitud(),
+                    descripcion: obtenerDescripcionSolicitud(),
+                    pdfArchivo: pdfBase64,
+                    archivos: archivosAdjuntos
                 };
 
                 // 6. ENVIAR A GOOGLE APPS SCRIPT (POST)
-                fetch(scriptURL, {
-                    redirect: "follow",
-                    method: 'POST',
-                    body: JSON.stringify(formData)
-                })
-                    .then(response => response.text())
-                    .then(textoRaw => {
-                        console.log("Respuesta cruda:", textoRaw);
-                        let data;
-                        try {
-                            data = JSON.parse(textoRaw);
-                        } catch (e) {
-                            throw new Error("Respuesta no válida del servidor.");
-                        }
+                try {
+                    await enviarAppsScriptPorFormulario(scriptURL, formData);
 
-                        // Confirmación Final
-                        const idFinal = data.id || codigoReservado;
-                        // Aseguramos que el ID final coincida si cambió algo
-                        if (idFinal && idFinal !== codigoReservado) {
-                            const codigoFinal = 'RFP-' + String(idFinal).slice(-5); // Formateo simple por si acaso se recibe raw
-                            document.getElementById('message').innerText = (idFinal.toString().startsWith('RFP') ? idFinal : codigoFinal);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error enviando a API:', error);
-                        alert("Hubo un error de conexión con el servidor (posiblemente la imagen es muy grande). PDF Generado.");
-                        document.getElementById('message').innerText = "ERR-API";
-                    })
-                    .finally(() => {
-                        restaurarVista();
-                    });
+                    document.getElementById('message').innerText = codigoReservado;
+
+                    const mensajeGracias = document.getElementById('gracias');
+                    if (mensajeGracias) {
+                        mensajeGracias.innerHTML = `Solicitud enviada correctamente. Código: <strong>${codigoReservado}</strong>.`;
+                    }
+                } catch (error) {
+                    console.error('Error enviando a API:', error);
+                    alert(`Hubo un error al registrar la solicitud: ${error.message}. Verifica la conexión y la implementación de Apps Script.`);
+                    document.getElementById('message').innerText = "ERR-API";
+                } finally {
+                    restaurarVista();
+                }
 
             } catch (err) {
                 console.error("Error crítico en proceso:", err);
@@ -7379,11 +7553,42 @@
                         : (tipoTramite.includes('APELACIÓN') || tipoTramite.includes('APELACION'))
                             ? 'APELACIÓN'
                             : 'RECLAMO';
+                    const esApelacion = tipoTramiteSingular === 'APELACIÓN';
+                    const esQueja = tipoTramiteSingular === 'QUEJA';
+                    const esReclamo = tipoTramiteSingular === 'RECLAMO';
+                    elemento.classList.toggle('pdf-queja-mode', esQueja);
+                    elemento.classList.toggle('pdf-apelacion-mode', esApelacion);
+                    elemento.classList.toggle('pdf-reclamo-mode', esReclamo);
+                    const textoDatosTramite = esApelacion
+                        ? '2. DATOS DE LA APELACIÓN'
+                        : esQueja
+                            ? '2. DATOS DE LA QUEJA'
+                            : '2. DATOS DEL RECLAMO';
+                    const textoMotivoTramite = esApelacion
+                        ? 'MOTIVO DE LA APELACIÓN'
+                        : esQueja
+                            ? 'MOTIVO DE LA QUEJA'
+                            : 'MOTIVO DEL RECLAMO';
                     const titleHeader = document.querySelector('.pdf-title-main');
-                    if (titleHeader) titleHeader.innerHTML = `FORMULARIO DE<br>${tipoTramite.toUpperCase()}`;
+                    if (titleHeader) titleHeader.innerHTML = esApelacion
+                        ? 'FORMULARIO DE<br>RECURSO DE APELACIÓN'
+                        : esQueja
+                            ? 'FORMULARIO DE QUEJA'
+                        : `FORMULARIO DE<br>${tipoTramite.toUpperCase()}`;
                     setInnerText('tituloTicketFinal', tipoTramiteSingular);
-                    setInnerText('pdf-titulo-datos-tramite', `2. DATOS DEL ${tipoTramiteSingular}`);
-                    setInnerText('pdf-titulo-motivo-tramite', `MOTIVO DEL ${tipoTramiteSingular}`);
+                    setInnerText('pdf-titulo-datos-tramite', textoDatosTramite);
+                    setInnerText('pdf-titulo-motivo-tramite', textoMotivoTramite);
+                    setInnerText('pdf-label-codigo-tipo', esApelacion ? 'Código de Apelación:' : esQueja ? 'Código de Queja:' : 'Código del Reclamo:');
+                    setInnerText('pdf-label-datos-persona', esApelacion ? 'DATOS DEL APELANTE' : esQueja ? 'DATOS DE QUIEN PRESENTA LA QUEJA' : 'DATOS DEL RECLAMANTE');
+                    setInnerText('pdf-label-condicion', esApelacion ? 'Condición de quien presenta la apelación*' : esQueja ? 'Condición de quien presenta la queja*' : 'Condición de quien presenta el reclamo');
+                    setInnerText('pdf-label-nombres', esApelacion ? 'Nombres del apelante*' : esQueja ? 'Nombres de quien presenta la queja*' : 'Nombres del reclamante*');
+                    setInnerText('pdf-label-apellidos', esApelacion ? 'Apellidos del apelante*' : esQueja ? 'Apellidos de quien presenta la queja*' : 'Apellidos del reclamante*');
+                    setInnerText('pdf-label-representante-titulo', esApelacion
+                        ? 'DATOS DEL REPRESENTANTE. Si la apelación fuera presentada por un representante, adjuntar el poder respectivo y completar los siguientes datos:'
+                        : esQueja
+                            ? 'DATOS DEL REPRESENTANTE. Si la queja fuera presentada por un representante, adjuntar el poder respectivo y completar los siguientes datos:'
+                        : 'DATOS DEL REPRESENTANTE, Si el reclamo fuera presentado por un representante, adjuntar el poder respectivo y completar los siguientes datos');
+                    setInnerText('pdf-label-autoriza', esApelacion ? 'Apelante autoriza ser notificado por correo electrónico*' : esQueja ? 'Usuario autoriza ser notificado por correo electrónico*' : 'Autoriza notificación por correo*');
 
                     // Identificar Condición (Abonado, Usuario, Representante)
                     let condicion = (tipoUsuarioSeleccionado || 'abonado').toUpperCase();
@@ -7394,6 +7599,7 @@
                     if (esRepresentante) {
                         // El Reclamante es el titular / empresa (usamos Razón Social)
                         const rSocial = getValue('razonsocial');
+                        setInnerText('pdf-val-razon-social', rSocial);
                         setInnerText('pdf-val-nombre-solo', rSocial ? rSocial : 'Ver expediente / Empresa vinculada');
                         setInnerText('pdf-val-apellidos-solo', '-');
                         setInnerText('pdf-val-tipodoc', '-');
@@ -7407,6 +7613,7 @@
                         setInnerText('pdf-val-rep-poder', getFileName('cartaPoder') || 'Sí');
                     } else {
                         // El Reclamante directo
+                        setInnerText('pdf-val-razon-social', getValue('razonsocial'));
                         setInnerText('pdf-val-nombre-solo', getValue('name'));
                         setInnerText('pdf-val-apellidos-solo', getValue('apellidos'));
                         setInnerText('pdf-val-tipodoc', getSelectText('tipoDoc'));
@@ -7437,6 +7644,37 @@
                     let problema = '';
                     let infoNecesaria = '';
                     let descripcion = '';
+                    let especificacionApelacion = '';
+                    let datosCalidadReclamo = {};
+
+                    const obtenerEspecificacionApelacion = () => {
+                        const opcion = document.getElementById('apelacionOpciones')?.value || '';
+                        const valoresPorOpcion = {
+                            apelacionOne: [getValue('detallePruebaApelacionUno')],
+                            apelacionTwo: [getValue('detallefsApelacionDos')],
+                            apelacionThree: [getValue('materiaEmpresaApelacionTres')],
+                            apelacionFour: [
+                                getSelectText('apelacionopcioncuatro'),
+                                getValue('numeroReciboApelacionSiCuatro'),
+                                getValue('fechaEmisionApelacionSiCuatro'),
+                                getValue('fechaVencimientoApelacionSiCuatro'),
+                                getValue('montoReclamadoApelacionSiCuatro'),
+                                getValue('detalleReclamoApelacionSiCuatro')
+                            ],
+                            apelacionFive: [
+                                getSelectText('apelacionOpcioncinco'),
+                                getValue('numeroReciboApelacionSiCinco'),
+                                getValue('fechaEmisionApelacionSiCinco'),
+                                getValue('montoTotalApelacionSiCinco'),
+                                getValue('detalleReclamoApelacionSiCinco')
+                            ],
+                            apelacionSix: [getValue('materiaEmpresaEmitirApelacionSeis')]
+                        };
+
+                        return (valoresPorOpcion[opcion] || [])
+                            .filter(valor => valor && valor !== 'Seleccionar Opción' && valor !== 'Seleccione una Opción' && valor !== 'Seleccione Opción')
+                            .join(' - ');
+                    };
 
                     if (tipoTramite.includes('RECLAMO')) {
                         servicioLabel = getSelectText('servicioContratadoReclamo');
@@ -7452,6 +7690,16 @@
                         }
                         infoNecesaria = getValue('informacionNecesariaReclamo');
                         descripcion = getValue('descripcionProblemaSolicitudReclamo');
+                        datosCalidadReclamo = {
+                            fechaInicio: getValue('fechaInicioCalidadI'),
+                            direccion: getValue('direccionCalidadI'),
+                            departamento: getValue('departamentoCalidadI'),
+                            provincia: getValue('provinciaCalidadI'),
+                            distrito: getSelectText('distritoCalidad'),
+                            calle: getValue('CalleJrAvCalidad'),
+                            numero: '',
+                            codigoReporte: getValue('codigoReportePrevioCalidad')
+                        };
                     } else if (tipoTramite.includes('QUEJA')) {
                         servicioLabel = getSelectText('servicioObjetoQueja');
                         numServicio = getValue('numServicioQueja');
@@ -7464,18 +7712,85 @@
                         materia = getSelectText('apelacionOpciones');
                         infoNecesaria = getValue('informacionNecesariaApelacion');
                         descripcion = getValue('sustentoApelacion');
+                        especificacionApelacion = obtenerEspecificacionApelacion();
                     }
+
+                    const rowServicioContratado = document.getElementById('pdf-row-servicio-contratado');
+                    const rowServicioMateria = document.getElementById('pdf-row-servicio-materia');
+                    const rowApelacionReclamo = document.getElementById('pdf-row-apelacion-reclamo');
+                    const rowApelacionFecha = document.getElementById('pdf-row-apelacion-fecha');
+                    const rowQuejaFecha = document.getElementById('pdf-row-queja-fecha');
+                    const rowMotivoLabels = document.getElementById('pdf-row-motivo-labels');
+                    const rowMotivoValues = document.getElementById('pdf-row-motivo-values');
+                    const rowInfoLabels = document.getElementById('pdf-row-info-labels');
+                    const rowInfoValues = document.getElementById('pdf-row-info-values');
+                    const rowFechaHora = document.getElementById('pdf-row-fecha-hora');
+
+                    if (rowServicioContratado) rowServicioContratado.style.display = esApelacion ? 'none' : 'table-row';
+                    if (rowServicioMateria) rowServicioMateria.style.display = esApelacion ? 'none' : 'table-row';
+                    if (rowApelacionReclamo) rowApelacionReclamo.style.display = esApelacion ? 'table-row' : 'none';
+                    if (rowApelacionFecha) rowApelacionFecha.style.display = esApelacion ? 'table-row' : 'none';
+                    if (rowQuejaFecha) rowQuejaFecha.style.display = esQueja ? 'table-row' : 'none';
+                    if (rowMotivoLabels) rowMotivoLabels.style.display = (esQueja || esApelacion || esReclamo) ? 'none' : 'table-row';
+                    if (rowMotivoValues) rowMotivoValues.style.display = (esQueja || esApelacion || esReclamo) ? 'none' : 'table-row';
+                    if (rowInfoLabels) rowInfoLabels.style.display = (esQueja || esApelacion || esReclamo) ? 'none' : 'table-row';
+                    if (rowInfoValues) rowInfoValues.style.display = (esQueja || esApelacion || esReclamo) ? 'none' : 'table-row';
+                    if (rowFechaHora) rowFechaHora.style.display = esApelacion ? 'none' : 'table-row';
+
+                    setInnerText('pdf-label-servicio-contratado', esQueja ? 'Servicio objeto de la queja*' : 'Servicio contratado*');
+                    setInnerText('pdf-label-num-servicio', esQueja ? 'Número del servicio reclamado o del contrato del abonado' : 'Número o código del servicio');
+                    setInnerText('pdf-label-servicio-materia', esApelacion ? 'Servicio materia de apelación*' : esQueja ? 'Código o N° de reclamo' : 'Servicio materia de reclamo*');
+                    setInnerText('pdf-label-materia', esApelacion ? 'Motivo específico*' : esQueja ? 'Objeto de la queja*' : 'Materia Reclamable*');
+                    setInnerText('pdf-label-problema', (esApelacion || esQueja) ? '' : 'Problema específico*');
+                    setInnerText('pdf-label-info', esApelacion ? 'Información necesaria*' : 'Información necesaria*');
+                    setInnerText('pdf-label-descripcion', esApelacion ? 'Sustento de la apelación*' : esQueja ? 'Descripción del problema:*' : 'Descripción del problema y solicitud concreta:*');
 
                     setInnerText('pdf-val-servicio-contratado', servicioLabel || 'INTERNET FIJO');
                     setInnerText('pdf-val-num-servicio', numServicio);
-                    setInnerText('pdf-val-servicio-reclamo', servicioLabel || 'INTERNET FIJO');
+                    setInnerText('pdf-val-servicio-reclamo', esQueja ? getValue('codigoNumeroQueja') : (servicioLabel || 'INTERNET FIJO'));
                     setInnerText('pdf-val-materia', materia);
-                    setInnerText('pdf-val-problema', problema || 'Ver detalles adicionales');
+                    setInnerText('pdf-val-problema', (esApelacion || esQueja) ? '' : (problema || 'Ver detalles adicionales'));
                     setInnerText('pdf-val-info-necesaria', infoNecesaria);
                     setInnerText('pdf-val-descripcion', descripcion);
+                    setInnerText('pdf-val-reclamo-materia', materia);
+                    setInnerText('pdf-val-reclamo-problema', problema || 'Ver detalles adicionales');
+                    setInnerText('pdf-val-reclamo-info-generica', infoNecesaria);
+                    setInnerText('pdf-val-reclamo-fecha-inicio', datosCalidadReclamo.fechaInicio);
+                    setInnerText('pdf-val-reclamo-direccion-calidad', datosCalidadReclamo.direccion);
+                    setInnerText('pdf-val-reclamo-departamento-calidad', datosCalidadReclamo.departamento);
+                    setInnerText('pdf-val-reclamo-provincia-calidad', datosCalidadReclamo.provincia);
+                    setInnerText('pdf-val-reclamo-distrito-calidad', datosCalidadReclamo.distrito);
+                    setInnerText('pdf-val-reclamo-calle-calidad', datosCalidadReclamo.calle);
+                    setInnerText('pdf-val-reclamo-numero-calidad', datosCalidadReclamo.numero);
+                    setInnerText('pdf-val-reclamo-codigo-reporte', datosCalidadReclamo.codigoReporte);
+                    setInnerText('pdf-val-reclamo-descripcion', descripcion);
+                    setInnerText('pdf-val-reclamo-otra-materia', 'NO');
+                    setInnerText('pdf-val-reclamo-info-adicional', 'NO');
+                    setInnerText('pdf-val-apelacion-servicio-materia', servicioLabel);
+                    setInnerText('pdf-val-apelacion-num-servicio', numServicio);
+                    setInnerText('pdf-val-apelacion-motivo', materia);
+                    setInnerText('pdf-val-apelacion-especificar', [infoNecesaria, especificacionApelacion].filter(Boolean).join(' - '));
+                    setInnerText('pdf-val-apelacion-sustento', descripcion);
+                    setInnerText('pdf-val-apelacion-info-adicional', 'NO');
+                    setInnerText('pdf-val-queja-objeto', materia);
+                    setInnerText('pdf-val-queja-info-necesaria', infoNecesaria);
+                    setInnerText('pdf-val-queja-descripcion', descripcion);
+                    setInnerText('pdf-val-queja-otro-motivo', materia === 'Otros defectos de tramitación' ? 'SÍ' : 'NO');
+                    const adjuntaInfoQueja = ['adjuntaPrueba', 'constanciaPagoQueja', 'capturaQuejaCinco', 'dtramitacion']
+                        .some(id => getValue(id) === 'True');
+                    const archivosQueja = ['medioProbatorioNegativa', 'constanciaPagoMedioCobranza', 'medioProbatoriopgQueja', 'medioProbatoriosTramitacion']
+                        .map(id => getFileName(id))
+                        .filter(nombre => nombre && nombre !== 'No adjuntado');
+                    setInnerText('pdf-val-queja-info-adicional', adjuntaInfoQueja || archivosQueja.length
+                        ? ['SÍ', ...archivosQueja].join(' - ')
+                        : 'NO');
+                    setInnerText('pdf-val-codigo-numero-apelacion', getValue('codigoNumeroApelacion'));
+                    setInnerText('pdf-val-numero-carta-apelacion', getValue('numeroCartaApelacion'));
+                    setInnerText('pdf-val-fecha-carta-apelacion', getValue('fechaEmisionCartaApelacion'));
+                    setInnerText('pdf-val-fecha-presentacion-queja', getValue('fechaPresentacionQueja'));
 
                     // ===== SECCIÓN 5: CAMPOS ADICIONALES COMPLETADOS POR EL CLIENTE =====
-                    const detallesHTML = construirCamposAdicionalesClienteHTML('pdf');
+                    const detallesHTML = (esQueja || esApelacion || esReclamo) ? '' : construirCamposAdicionalesClienteHTML('pdf');
 
                     const detallesDestino = document.getElementById('pdf-val-detalles-adicionales');
                     const trDetallesHeader = document.getElementById('pdf-tr-detalles-adicionales');
@@ -7494,6 +7809,8 @@
                     const ahora = new Date();
                     setInnerText('pdf-val-fecha-solo', ahora.toLocaleDateString());
                     setInnerText('pdf-val-hora-solo', ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    setInnerText('pdf-val-apelacion-fecha-solo', ahora.toLocaleDateString());
+                    setInnerText('pdf-val-apelacion-hora-solo', ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
                     // Código de Reclamo
                     const codReclamo = document.getElementById('message')?.innerText || 'Pendiente';
@@ -7582,7 +7899,7 @@
         <div class="pdf-header-custom">
             <div class="pdf-title-main">FORMULARIO DE<br>RECLAMO</div>
             <div class="pdf-codigo-label">
-                Código del Reclamo: <span id="pdf-val-codigo"
+                <span id="pdf-label-codigo-tipo">Código del Reclamo:</span> <span id="pdf-val-codigo"
                     style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
             </div>
         </div>
@@ -7591,17 +7908,21 @@
 
         <table>
             <tr>
-                <td colspan="4" class="bg-light-blue">DATOS DEL RECLAMANTE</td>
+                <td colspan="4" class="bg-light-blue" id="pdf-label-datos-persona">DATOS DEL RECLAMANTE</td>
             </tr>
             <tr>
-                <td class="pdf-label" style="width: 25%;">Condición de quien presenta el reclamo</td>
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-condicion">Condición de quien presenta el reclamo</td>
                 <td colspan="3" id="pdf-val-condicion"></td>
             </tr>
             <tr>
-                <td class="pdf-label" style="width: 25%;">Nombres del reclamante*</td>
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-nombres">Nombres del reclamante*</td>
                 <td style="width: 25%;" id="pdf-val-nombre-solo"></td>
-                <td class="pdf-label" style="width: 25%;">Apellidos del reclamante*</td>
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-apellidos">Apellidos del reclamante*</td>
                 <td style="width: 25%;" id="pdf-val-apellidos-solo"></td>
+            </tr>
+            <tr>
+                <td class="pdf-label">Razón Social*</td>
+                <td colspan="3" id="pdf-val-razon-social"></td>
             </tr>
             <tr>
                 <td class="pdf-label">Tipo de documento de identidad*</td>
@@ -7610,7 +7931,7 @@
                 <td id="pdf-val-dni"></td>
             </tr>
             <tr>
-                <td colspan="4" class="bg-light-blue">DATOS DEL REPRESENTANTE (Si aplica)</td>
+                <td colspan="4" class="bg-light-blue" id="pdf-label-representante-titulo">DATOS DEL REPRESENTANTE, Si el reclamo fuera presentado por un representante, adjuntar el poder respectivo y completar los siguientes datos</td>
             </tr>
             <tr>
                 <td class="pdf-label" style="width: 25%;">Nombres del representante*</td>
@@ -7634,7 +7955,7 @@
             <tr>
                 <td class="pdf-label" style="width: 25%;">Dirección de correo electrónico</td>
                 <td style="width: 25%;" id="pdf-val-correo"></td>
-                <td class="pdf-label" style="width: 25%;">Autoriza notificación por correo*
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-autoriza">Autoriza notificación por correo*
                 </td>
                 <td style="width: 25%;" id="pdf-val-autoriza"></td>
             </tr>
@@ -7656,8 +7977,8 @@
             </tr>
         </table>
 
-        <div class="pdf-section-header pdf-page-break" id="pdf-titulo-datos-tramite" style="page-break-before: always; margin-top: 20px;">2. DATOS DEL RECLAMO</div>
-        <table style="margin-bottom: -1px;">
+        <div class="pdf-section-header" id="pdf-titulo-datos-tramite">2. DATOS DEL RECLAMO</div>
+        <table id="pdf-table-tramite" class="pdf-table-tramite" style="margin-bottom: -1px;">
             <tr>
                 <td colspan="4" class="bg-light-blue" style="font-size: 12px;">DATOS DEL SERVICIO</td>
             </tr>
@@ -7665,34 +7986,170 @@
                 <td class="pdf-label" style="width: 25%;">Empresa operadora*</td>
                 <td colspan="3">PYD TELECOM S.R.L. (FiberPro)</td>
             </tr>
-            <tr>
-                <td class="pdf-label" style="width: 25%;">Servicio contratado*</td>
+            <tr id="pdf-row-servicio-contratado">
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-servicio-contratado">Servicio contratado*</td>
                 <td style="width: 25%;" id="pdf-val-servicio-contratado"></td>
-                <td class="pdf-label" style="width: 25%;">Número o código del servicio</td>
+                <td class="pdf-label" style="width: 25%;" id="pdf-label-num-servicio">Número o código del servicio</td>
                 <td style="width: 25%;" id="pdf-val-num-servicio"></td>
             </tr>
-            <tr>
-                <td class="pdf-label">Servicio materia de reclamo*</td>
+            <tr id="pdf-row-servicio-materia">
+                <td class="pdf-label" id="pdf-label-servicio-materia">Servicio materia de reclamo*</td>
                 <td colspan="3" id="pdf-val-servicio-reclamo"></td>
             </tr>
+            <tr class="pdf-apelacion-only pdf-apelacion-page-break">
+                <td class="pdf-label">Servicio materia de apelación*</td>
+                <td id="pdf-val-apelacion-servicio-materia"></td>
+                <td class="pdf-label">Número del servicio reclamado o del contrato del abonado</td>
+                <td id="pdf-val-apelacion-num-servicio"></td>
+            </tr>
+            <tr id="pdf-row-apelacion-reclamo" style="display: none;">
+                <td class="pdf-label">Código o N° de reclamo</td>
+                <td id="pdf-val-codigo-numero-apelacion"></td>
+                <td class="pdf-label">Número de la carta que resuelve el reclamo</td>
+                <td id="pdf-val-numero-carta-apelacion"></td>
+            </tr>
+            <tr id="pdf-row-apelacion-fecha" style="display: none;">
+                <td class="pdf-label">Fecha de emisión de la carta que resuelve el reclamo</td>
+                <td colspan="3" id="pdf-val-fecha-carta-apelacion"></td>
+            </tr>
+        </table>
+        <table id="pdf-table-motivo" class="pdf-table-tramite" style="margin-bottom: -1px;">
             <tr>
                 <td colspan="4" class="bg-light-blue" id="pdf-titulo-motivo-tramite">MOTIVO DEL RECLAMO</td>
             </tr>
-            <tr>
-                <td colspan="2" class="bg-light-blue" style="width: 50%;">Materia Reclamable*</td>
-                <td colspan="2" class="bg-light-blue" style="width: 50%;">Problema específico*</td>
+            <tr class="pdf-reclamo-only">
+                <td class="bg-light-blue" style="width: 25%;">Materia Reclamable*</td>
+                <td id="pdf-val-reclamo-materia"></td>
+                <td class="bg-light-blue" style="width: 25%;">Problema específico*</td>
+                <td id="pdf-val-reclamo-problema"></td>
             </tr>
-            <tr>
+            <tr id="pdf-row-motivo-labels">
+                <td colspan="2" class="bg-light-blue" style="width: 50%;" id="pdf-label-materia">Materia Reclamable*</td>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;" id="pdf-label-problema">Problema específico*</td>
+            </tr>
+            <tr id="pdf-row-motivo-values">
                 <td colspan="2" class="pdf-input-area" id="pdf-val-materia"></td>
                 <td colspan="2" class="pdf-input-area" id="pdf-val-problema"></td>
             </tr>
-            <tr>
-                <td colspan="2" class="bg-light-blue" style="width: 50%;">Información necesaria*</td>
-                <td colspan="2" class="bg-light-blue" style="width: 50%;">Descripción del problema y solicitud concreta:*</td>
+            <tr id="pdf-row-info-labels">
+                <td colspan="2" class="bg-light-blue" style="width: 50%;" id="pdf-label-info">Información necesaria*</td>
+                <td colspan="2" class="bg-light-blue" style="width: 50%;" id="pdf-label-descripcion">Descripción del problema y solicitud concreta:*</td>
             </tr>
-            <tr>
+            <tr id="pdf-row-info-values">
                 <td colspan="2" class="pdf-input-area" id="pdf-val-info-necesaria"></td>
                 <td colspan="2" class="pdf-input-area" id="pdf-val-descripcion"></td>
+            </tr>
+            <tr class="pdf-reclamo-only pdf-reclamo-page-break">
+                <td colspan="4" class="bg-light-blue">Información necesaria*</td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Fecha de inicio del problema:*</td>
+                <td colspan="3" id="pdf-val-reclamo-fecha-inicio"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td colspan="4" style="font-weight: bold;">Dirección en la cual se presenta el problema de calidad y/o avería</td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Departamento*</td>
+                <td colspan="3" id="pdf-val-reclamo-departamento-calidad"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Provincia*</td>
+                <td colspan="3" id="pdf-val-reclamo-provincia-calidad"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Distrito*</td>
+                <td colspan="3" id="pdf-val-reclamo-distrito-calidad"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Calle/Jr./Av.*</td>
+                <td colspan="3" id="pdf-val-reclamo-calle-calidad"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">N°*</td>
+                <td colspan="3" id="pdf-val-reclamo-numero-calidad"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="pdf-label">Código de reporte previo*</td>
+                <td colspan="3" id="pdf-val-reclamo-codigo-reporte"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td colspan="4" class="bg-light-blue">Descripción del problema y solicitud concreta:*</td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td colspan="4" class="pdf-input-area" id="pdf-val-reclamo-descripcion"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td colspan="2" class="bg-light-blue">¿Se desea registrar otra materia reclamable?</td>
+                <td colspan="2" id="pdf-val-reclamo-otra-materia"></td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td colspan="4" style="border-left: 0; border-right: 0; border-bottom: 0; padding: 14px 0 8px 0; font-size: 18px; font-weight: bold;">3. INFORMACIÓN ADICIONAL</td>
+            </tr>
+            <tr class="pdf-reclamo-only">
+                <td class="bg-light-blue">¿Se adjunta información adicional?*</td>
+                <td colspan="3" id="pdf-val-reclamo-info-adicional"></td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td class="bg-light-blue">Motivo específico*</td>
+                <td colspan="3" id="pdf-val-apelacion-motivo"></td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td colspan="4" class="bg-light-blue">Información necesaria*</td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td class="pdf-label">Especificar:*</td>
+                <td colspan="3" class="pdf-input-area" id="pdf-val-apelacion-especificar"></td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td colspan="4" class="bg-light-blue">Sustento de la apelación*</td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td colspan="4" class="pdf-input-area" id="pdf-val-apelacion-sustento"></td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td colspan="4" style="border-left: 0; border-right: 0; border-bottom: 0; padding: 14px 0 8px 0; font-size: 18px; font-weight: bold;">3. INFORMACIÓN ADICIONAL</td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td class="bg-light-blue">¿Se adjunta información adicional?*</td>
+                <td colspan="3" id="pdf-val-apelacion-info-adicional"></td>
+            </tr>
+            <tr class="pdf-apelacion-only">
+                <td colspan="4">
+                    Fecha: <span id="pdf-val-apelacion-fecha-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
+                    Hora: <span id="pdf-val-apelacion-hora-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 60px; display: inline-block;"></span>
+                </td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td class="bg-light-blue" id="pdf-label-queja-objeto">Objeto de la queja*</td>
+                <td colspan="3" id="pdf-val-queja-objeto"></td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="4" class="bg-light-blue" id="pdf-label-queja-info">Información necesaria*</td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="4" class="pdf-input-area" id="pdf-val-queja-info-necesaria"></td>
+            </tr>
+            <tr id="pdf-row-queja-fecha" class="pdf-queja-only pdf-queja-page-break">
+                <td class="pdf-label">Fecha de presentación del reclamo:*</td>
+                <td colspan="3" id="pdf-val-fecha-presentacion-queja"></td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="4" class="bg-light-blue">Descripción del problema:*</td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="4" class="pdf-input-area" id="pdf-val-queja-descripcion"></td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="2" class="bg-light-blue">¿Se desea registrar la queja por otro motivo?</td>
+                <td colspan="2" id="pdf-val-queja-otro-motivo"></td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td colspan="4" style="border-left: 0; border-right: 0; border-bottom: 0; padding: 14px 0 8px 0; font-size: 18px; font-weight: bold;">3. INFORMACIÓN ADICIONAL</td>
+            </tr>
+            <tr class="pdf-queja-only">
+                <td class="bg-light-blue">¿Se adjunta información adicional?*</td>
+                <td colspan="3" id="pdf-val-queja-info-adicional"></td>
             </tr>
 
             <!-- CAMPOS DINAMICOS -->
@@ -7702,7 +8159,7 @@
             <tr id="pdf-tr-detalles-adicionales-content" style="display: none;">
                 <td colspan="4" id="pdf-val-detalles-adicionales"></td>
             </tr>
-            <tr>
+            <tr id="pdf-row-fecha-hora">
                 <td colspan="4">
                     Fecha: <span id="pdf-val-fecha-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 80px; display: inline-block;"></span>
                     Hora: <span id="pdf-val-hora-solo" style="border-bottom: 1px solid #000; padding: 0 10px; min-width: 60px; display: inline-block;"></span>
