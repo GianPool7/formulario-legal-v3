@@ -7076,7 +7076,7 @@
         }
 
         function construirTituloFormulario(codigo) {
-            return `Formulario de ${obtenerNombreTramiteArchivo()} ${codigo}`;
+            return `formulario de ${obtenerNombreTramiteArchivo()} ${codigo}`;
         }
 
         async function recolectarArchivosAdjuntos() {
@@ -7191,7 +7191,7 @@
                 obtenerDatosPersonales();
 
                 // 2. URL DEL SCRIPT
-                const scriptURL = 'https://script.google.com/macros/s/AKfycbwMPN_Z8OKQPT_sbFeAlqSyOfZtFpVL1retmkcJz24MiGb0tYKb5PAz9IN8hfFa158Q/exec';
+                const scriptURL = 'https://script.google.com/macros/s/AKfycbw4N34piUvBLx7nZvWgIYIC_I8tEw_uAbUt0IUaJ3WEmTW9G2pWU2eM04dwFsWw_6wzOA/exec';
 
                 // 3. Reservar código y carpeta antes de generar el PDF.
                 const prefijoCodigo = obtenerPrefijoCodigo();
@@ -7218,14 +7218,23 @@
                 const formData = {
                     codigo: codigoReservado,
                     id: codigoReservado,
+                    urlCarpeta: '',
                     carpetaId: carpetaIdReservada,
+                    carpetaUrl: '',
+                    urlCarpetaReservada: '',
                     prefijoCodigo: prefijoCodigo,
+                    asunto: tituloFormulario,
+                    subject: tituloFormulario,
+                    emailSubject: tituloFormulario,
                     asuntoCorreo: tituloFormulario,
                     tituloCorreo: tituloFormulario,
                     tituloFormulario: tituloFormulario,
+                    titulo: tituloFormulario,
                     nombrePdf: `${tituloFormulario}.pdf`,
                     nombreArchivoPdf: `${tituloFormulario}.pdf`,
                     mostrarLinkCarpeta: false,
+                    incluirLinkCarpeta: false,
+                    ocultarLinkCarpeta: true,
                     nombre: document.getElementById('name')?.value || '',
                     apellidos: document.getElementById('apellidos')?.value || '',
                     tipodoc: document.getElementById('tipoDoc')?.value || '',
@@ -8103,33 +8112,36 @@
                 <td colspan="4" class="bg-light-blue">Información necesaria*</td>
             </tr>
             <tr class="pdf-reclamo-only">
+                <td colspan="4" class="pdf-input-area" id="pdf-val-reclamo-info-necesaria"></td>
+            </tr>
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Fecha de inicio del problema:*</td>
                 <td colspan="3" id="pdf-val-reclamo-fecha-inicio"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td colspan="4" style="font-weight: bold;">Dirección en la cual se presenta el problema de calidad y/o avería</td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Departamento*</td>
                 <td colspan="3" id="pdf-val-reclamo-departamento-calidad"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Provincia*</td>
                 <td colspan="3" id="pdf-val-reclamo-provincia-calidad"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Distrito*</td>
                 <td colspan="3" id="pdf-val-reclamo-distrito-calidad"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Calle/Jr./Av.*</td>
                 <td colspan="3" id="pdf-val-reclamo-calle-calidad"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">N°*</td>
                 <td colspan="3" id="pdf-val-reclamo-numero-calidad"></td>
             </tr>
-            <tr class="pdf-reclamo-only">
+            <tr class="pdf-reclamo-only" style="display: none;">
                 <td class="pdf-label">Código de reporte previo*</td>
                 <td colspan="3" id="pdf-val-reclamo-codigo-reporte"></td>
             </tr>
