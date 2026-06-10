@@ -7054,13 +7054,21 @@
             return 'RFPI';
         }
 
+        const CORRELATIVOS_INICIALES = {
+            RFPI: 2026000000027,
+            QFPI: 2026000000006,
+            AFPI: 2026000000003
+        };
+        const LONGITUD_CORRELATIVO = 13;
+
         function normalizarCodigoLegal(codigo, prefijoCodigo) {
             const texto = String(codigo || '').trim().toUpperCase();
             const soloNumeros = texto.match(/\d+/g)?.join('') || '';
-            const prefijo = texto.match(/^(RFPI|QFPI|AFPI)/)?.[1] || prefijoCodigo;
+            const prefijo = texto.match(/^(RFPI|QFPI|AFPI)/)?.[1] || prefijoCodigo || 'RFPI';
+            const correlativoInicial = CORRELATIVOS_INICIALES[prefijo] || 0;
+            const correlativo = Number(soloNumeros || correlativoInicial);
 
-            if (!soloNumeros) return `${prefijo}00000`;
-            return `${prefijo}${soloNumeros.padStart(5, '0')}`;
+            return `${prefijo}${String(Math.max(correlativo, correlativoInicial)).padStart(LONGITUD_CORRELATIVO, '0')}`;
         }
 
         function obtenerNombreTramiteArchivo() {
